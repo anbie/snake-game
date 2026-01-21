@@ -17,6 +17,11 @@ BLACK = (0, 0, 0)
 RED = (200, 0, 0)
 GREEN = (0, 200, 0)
 BLUE = (0, 0, 200)
+ORANGE = (255, 165, 0)
+YELLOW = (255, 255, 0)
+
+# Food colors for variety
+FOOD_COLORS = [RED, ORANGE, YELLOW]
 
 # Direction enum
 class Direction(Enum):
@@ -43,15 +48,24 @@ class SnakeGame:
             Point(self.head.x - (2 * BLOCK_SIZE), self.head.y)
         ]
         self.score = 0
-        self.food = None
+        self.food_items = []
         self._place_food()
         
     def _place_food(self):
-        x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
-        y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
-        self.food = Point(x, y)
-        if self.food in self.snake:
-            self._place_food()
+        """Place 3 food items on the board"""
+        self.food_items = []
+        attempts = 0
+        max_attempts = 100
+        
+        while len(self.food_items) < 3 and attempts < max_attempts:
+            x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
+            y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
+            new_food = Point(x, y)
+            
+            # Check if position is valid (not on snake or other food)
+            if new_food not in self.snake and new_food not in self.food_items:
+                self.food_items.append(new_food)
+            attempts += 1
             
     def play_step(self):
         # 1. Collect user input
@@ -81,11 +95,18 @@ class SnakeGame:
             game_over = True
             return game_over, self.score
             
-        # 4. Place new food or just move
-        if self.head == self.food:
-            self.score += 1
-            self._place_food()
-        else:
+        # 4. Check if food eaten and place new food or just move
+        food_eaten = False
+        for food in self.food_items:
+            if self.head == food:
+                self.score += 1
+                food_eaten = True
+                self.food_items.remove(food)
+                # Add a new food item to maintain 3 food items
+                self._add_single_food()
+                break
+        
+        if not food_eaten:
             self.snake.pop()
         
         # 5. Update UI and clock
@@ -93,6 +114,22 @@ class SnakeGame:
         self.clock.tick(SPEED)
         
         return game_over, self.score
+    
+    def _add_single_food(self):
+        """Add a single food item to the board"""
+        attempts = 0
+        max_attempts = 100
+        
+        while attempts < max_attempts:
+            x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
+            y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
+            new_food = Point(x, y)
+            
+            # Check if position is valid (not on snake or other food)
+            if new_food not in self.snake and new_food not in self.food_items:
+                self.food_items.append(new_food)
+                break
+            attempts += 1
     
     def _is_collision(self, pt=None):
         if pt is None:
@@ -113,8 +150,10 @@ class SnakeGame:
             pygame.draw.rect(self.display, GREEN, pygame.Rect(pt.x, pt.y, BLOCK_SIZE, BLOCK_SIZE))
             pygame.draw.rect(self.display, BLUE, pygame.Rect(pt.x + 4, pt.y + 4, 12, 12))
             
-        # Draw food
-        pygame.draw.rect(self.display, RED, pygame.Rect(self.food.x, self.food.y, BLOCK_SIZE, BLOCK_SIZE))
+        # Draw all food items with different colors
+        for i, food in enumerate(self.food_items):
+            color = FOOD_COLORS[i % len(FOOD_COLORS)]
+            pygame.draw.rect(self.display, color, pygame.Rect(food.x, food.y, BLOCK_SIZE, BLOCK_SIZE))
         
         # Draw score
         font = pygame.font.Font(None, 36)

@@ -9,7 +9,7 @@ pygame.init()
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 480
 BLOCK_SIZE = 20
-SPEED = 10
+SPEED = 10 
 
 # Colors
 WHITE = (255, 255, 255)

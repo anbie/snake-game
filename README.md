@@ -4,15 +4,17 @@ A classic snake game implementation in Python using Pygame. Control the snake to
 
 ![Python](https://img.shields.io/badge/python-3.7+-blue.svg)
 ![Pygame](https://img.shields.io/badge/pygame-2.0+-green.svg)
+![Tests](https://github.com/anbie/snake-game/workflows/Run%20Tests/badge.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ## 🎮 Game Features
 
-- Classic snake gameplay mechanics
+- Classic snake gameplay mechanics with **3 colorful food items** (Red, Orange, Yellow)
 - Smooth controls using arrow keys
 - Score tracking
 - Game over detection with restart option
 - Clean and simple graphics
+- Comprehensive unit tests with CI/CD integration
 
 ## 🎯 How to Play
 
@@ -21,7 +23,7 @@ A classic snake game implementation in Python using Pygame. Control the snake to
   - ⬇️ **DOWN** - Move down
   - ⬅️ **LEFT** - Move left
   - ➡️ **RIGHT** - Move right
-- Eat the red food to grow longer and increase your score
+- Eat the colorful food items (red, orange, yellow) to grow longer and increase your score
 - Avoid hitting the walls or your own body
 - Press **SPACE** to restart after game over
 
@@ -55,7 +57,13 @@ python snake_game.py
 
 ## 📦 Dependencies
 
+### Runtime Dependencies
 - **pygame**: Game development library for Python
+
+### Development Dependencies
+- **pytest**: Testing framework
+- **pytest-cov**: Code coverage plugin for pytest
+- **coverage**: Code coverage measurement
 
 See `requirements.txt` for specific version requirements.
 
@@ -73,18 +81,69 @@ You can modify the following constants in `snake_game.py` to customize the game:
 
 ```
 snake-game/
-├── snake_game.py      # Main game file
-├── requirements.txt   # Python dependencies
-├── README.md         # This file
-└── .gitignore        # Git ignore file
+├── .github/
+│   └── workflows/
+│       └── tests.yml       # GitHub Actions CI/CD workflow
+├── snake_game.py           # Main game file
+├── test_snake_game.py      # Comprehensive unit tests
+├── requirements.txt        # Python dependencies
+├── README.md              # This file
+└── .gitignore             # Git ignore file
 ```
 
 ## 🎓 Game Mechanics
 
 - The snake starts with 3 segments
+- **3 food items** are always present on the board with different colors
 - Each food eaten adds 1 point to the score and 1 segment to the snake
+- When a food is eaten, a new one spawns to maintain 3 food items
 - The game ends when the snake hits a wall or itself
-- Food spawns randomly on the grid
+- Food spawns randomly on the grid, avoiding the snake's body
+
+## 🧪 Testing
+
+This project includes comprehensive unit tests covering all game functions.
+
+### Running Tests Locally
+
+1. Install test dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+2. Run tests with pytest:
+```bash
+pytest test_snake_game.py -v
+```
+
+3. Run tests with coverage:
+```bash
+pytest test_snake_game.py -v --cov=snake_game --cov-report=term-missing
+```
+
+4. Run tests with unittest:
+```bash
+python -m unittest test_snake_game.py -v
+```
+
+### Test Coverage
+
+The test suite includes:
+- **50+ unit tests** covering all game functions
+- Initialization and reset tests
+- Movement and collision detection tests
+- Food placement and eating mechanics tests
+- Game state and scoring tests
+- Boundary and edge case tests
+
+### Continuous Integration
+
+Tests run automatically on every commit via GitHub Actions:
+- Tests run on Python 3.8, 3.9, 3.10, and 3.11
+- Automatic code coverage reporting
+- Tests run on both push and pull requests
+
+View test results in the [Actions tab](https://github.com/anbie/snake-game/actions) of the repository.
 
 ## 🤝 Contributing
 

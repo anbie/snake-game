@@ -1,0 +1,60 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pygame xvfb
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+    
+    - name: Run tests with pytest
+      run: |
+        xvfb-run -a python -m pytest test_snake_game.py -v --cov=snake_game --cov-report=term-missing
+    
+    - name: Run tests with unittest
+      run: |
+        xvfb-run -a python -m unittest test_snake_game.py -v
+    
+    - name: Generate coverage report
+      if: matrix.python-version == '3.11'
+      run: |
+        pip install coverage
+        xvfb-run -a coverage run -m pytest test_snake_game.py
+        coverage report -m
+        coverage html
+    
+    - name: Upload coverage reports
+      if: matrix.python-version == '3.11'
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: htmlcov/
+
+# Made with Bob

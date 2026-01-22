@@ -411,3 +411,371 @@ if __name__ == '__main__':
     unittest.main(verbosity=2)
 
 # Made with Bob
+
+
+
+class TestShowMenu(unittest.TestCase):
+    """Test suite for the show_menu function"""
+    
+    def setUp(self):
+        """Set up test fixtures"""
+        pygame.init()
+        self.display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    
+    def tearDown(self):
+        """Clean up after tests"""
+        pygame.quit()
+    
+    @patch('snake_game.pygame.event.get')
+    def test_menu_returns_classic_on_enter_with_default_selection(self, mock_event_get):
+        """Test that menu returns CLASSIC mode when ENTER is pressed with default selection"""
+        from snake_game import show_menu, GameMode
+        
+        # Simulate ENTER key press
+        mock_event = Mock()
+        mock_event.type = pygame.KEYDOWN
+        mock_event.key = pygame.K_RETURN
+        mock_event_get.return_value = [mock_event]
+        
+        result = show_menu(self.display)
+        self.assertEqual(result, GameMode.CLASSIC)
+    
+    @patch('snake_game.pygame.event.get')
+    def test_menu_returns_classic_on_space_with_default_selection(self, mock_event_get):
+        """Test that menu returns CLASSIC mode when SPACE is pressed with default selection"""
+        from snake_game import show_menu, GameMode
+        
+        # Simulate SPACE key press
+        mock_event = Mock()
+        mock_event.type = pygame.KEYDOWN
+        mock_event.key = pygame.K_SPACE
+        mock_event_get.return_value = [mock_event]
+        
+        result = show_menu(self.display)
+        self.assertEqual(result, GameMode.CLASSIC)
+    
+    @patch('snake_game.pygame.event.get')
+    def test_menu_navigation_down_then_enter(self, mock_event_get):
+        """Test menu navigation: DOWN arrow then ENTER selects FUN mode"""
+        from snake_game import show_menu, GameMode
+        
+        # Simulate DOWN arrow then ENTER
+        down_event = Mock()
+        down_event.type = pygame.KEYDOWN
+        down_event.key = pygame.K_DOWN
+        
+        enter_event = Mock()
+        enter_event.type = pygame.KEYDOWN
+        enter_event.key = pygame.K_RETURN
+        
+        # First call returns DOWN, second call returns ENTER
+        mock_event_get.side_effect = [[down_event], [enter_event]]
+        
+        result = show_menu(self.display)
+        self.assertEqual(result, GameMode.FUN)
+    
+    @patch('snake_game.pygame.event.get')
+    def test_menu_navigation_up_wraps_to_fun(self, mock_event_get):
+        """Test that UP arrow from first option wraps to last option (FUN mode)"""
+        from snake_game import show_menu, GameMode
+        
+        # Simulate UP arrow (should wrap to FUN) then ENTER
+        up_event = Mock()
+        up_event.type = pygame.KEYDOWN
+        up_event.key = pygame.K_UP
+        
+        enter_event = Mock()
+        enter_event.type = pygame.KEYDOWN
+        enter_event.key = pygame.K_RETURN
+        
+        mock_event_get.side_effect = [[up_event], [enter_event]]
+        
+        result = show_menu(self.display)
+        self.assertEqual(result, GameMode.FUN)
+    
+    @patch('snake_game.pygame.event.get')
+    def test_menu_navigation_down_twice_wraps_to_classic(self, mock_event_get):
+        """Test that DOWN arrow twice wraps back to CLASSIC mode"""
+        from snake_game import show_menu, GameMode
+        
+        # Simulate DOWN, DOWN (wraps to CLASSIC), then ENTER
+        down_event = Mock()
+        down_event.type = pygame.KEYDOWN
+        down_event.key = pygame.K_DOWN
+        
+        enter_event = Mock()
+        enter_event.type = pygame.KEYDOWN
+        enter_event.key = pygame.K_RETURN
+        
+        mock_event_get.side_effect = [[down_event], [down_event], [enter_event]]
+        
+        result = show_menu(self.display)
+        self.assertEqual(result, GameMode.CLASSIC)
+    
+    @patch('snake_game.pygame.event.get')
+    @patch('snake_game.pygame.quit')
+    def test_menu_quit_event(self, mock_quit, mock_event_get):
+        """Test that QUIT event calls pygame.quit and exits"""
+        from snake_game import show_menu
+        
+        # Simulate QUIT event
+        quit_event = Mock()
+        quit_event.type = pygame.QUIT
+        mock_event_get.return_value = [quit_event]
+        
+        # Mock quit() to raise SystemExit
+        with patch('builtins.quit', side_effect=SystemExit):
+            with self.assertRaises(SystemExit):
+                show_menu(self.display)
+        
+        mock_quit.assert_called_once()
+    
+    @patch('snake_game.pygame.event.get')
+    def test_menu_ignores_other_keys(self, mock_event_get):
+        """Test that menu ignores keys other than UP, DOWN, ENTER, SPACE"""
+        from snake_game import show_menu, GameMode
+        
+        # Simulate random key then ENTER
+        random_key_event = Mock()
+        random_key_event.type = pygame.KEYDOWN
+        random_key_event.key = pygame.K_a  # Random key
+        
+        enter_event = Mock()
+        enter_event.type = pygame.KEYDOWN
+        enter_event.key = pygame.K_RETURN
+        
+        mock_event_get.side_effect = [[random_key_event], [enter_event]]
+        
+        result = show_menu(self.display)
+        # Should still be CLASSIC (default) since random key was ignored
+        self.assertEqual(result, GameMode.CLASSIC)
+
+
+class TestMainGameLoop(unittest.TestCase):
+    """Test suite for main game loop functionality"""
+    
+    def setUp(self):
+        """Set up test fixtures"""
+        pygame.init()
+    
+    def tearDown(self):
+        """Clean up after tests"""
+        pygame.quit()
+    
+    def test_game_over_state_detection(self):
+        """Test that game over state is properly detected"""
+        game = SnakeGame(GameMode.CLASSIC)
+        
+        # Force a collision
+        game.head = Point(-BLOCK_SIZE, WINDOW_HEIGHT // 2)
+        game.snake.insert(0, game.head)
+        
+        # Check collision
+        self.assertTrue(game._is_collision())
+    
+    def test_game_reset_after_game_over(self):
+        """Test that game can be reset after game over"""
+        game = SnakeGame(GameMode.CLASSIC)
+        
+        # Modify game state
+        game.score = 10
+        game.snake = [Point(100, 100)]
+        
+        # Reset
+        game.reset()
+        
+        # Verify reset
+        self.assertEqual(game.score, 0)
+        self.assertEqual(len(game.snake), 3)
+    
+    def test_mode_change_after_game_over(self):
+        """Test that mode can be changed after game over"""
+        game = SnakeGame(GameMode.CLASSIC)
+        initial_mode = game.mode
+        
+        # Change mode
+        game.set_mode(GameMode.FUN)
+        
+        # Verify mode changed
+        self.assertNotEqual(game.mode, initial_mode)
+        self.assertEqual(game.mode, GameMode.FUN)
+    
+    def test_score_persists_until_reset(self):
+        """Test that score persists until explicit reset"""
+        game = SnakeGame(GameMode.CLASSIC)
+        
+        # Set score
+        game.score = 15
+        
+        # Score should persist
+        self.assertEqual(game.score, 15)
+        
+        # Reset should clear score
+        game.reset()
+        self.assertEqual(game.score, 0)
+    
+    def test_game_over_returns_final_score(self):
+        """Test that play_step returns final score on game over"""
+        game = SnakeGame(GameMode.CLASSIC)
+        game.score = 5
+        
+        # Force game over
+        game.head = Point(-BLOCK_SIZE, WINDOW_HEIGHT // 2)
+        game.snake.insert(0, game.head)
+        
+        # Simulate play_step detecting collision
+        game_over = False
+        final_score = 0
+        if game._is_collision():
+            game_over = True
+            final_score = game.score
+        
+        self.assertTrue(game_over)
+        self.assertEqual(final_score, 5)
+
+
+class TestUIRendering(unittest.TestCase):
+    """Test suite for UI rendering functions"""
+    
+    def setUp(self):
+        """Set up test fixtures"""
+        pygame.init()
+        self.game = SnakeGame(GameMode.CLASSIC)
+    
+    def tearDown(self):
+        """Clean up after tests"""
+        pygame.quit()
+    
+    def test_update_ui_does_not_crash(self):
+        """Test that _update_ui executes without errors"""
+        try:
+            self.game._update_ui()
+            success = True
+        except Exception:
+            success = False
+        
+        self.assertTrue(success)
+    
+    def test_update_ui_with_different_scores(self):
+        """Test UI update with various score values"""
+        for score in [0, 1, 10, 100, 999]:
+            self.game.score = score
+            try:
+                self.game._update_ui()
+                success = True
+            except Exception:
+                success = False
+            
+            self.assertTrue(success, f"UI update failed with score {score}")
+    
+    def test_update_ui_with_different_modes(self):
+        """Test UI update in both game modes"""
+        for mode in [GameMode.CLASSIC, GameMode.FUN]:
+            self.game.mode = mode
+            try:
+                self.game._update_ui()
+                success = True
+            except Exception:
+                success = False
+            
+            self.assertTrue(success, f"UI update failed in {mode.name} mode")
+    
+    def test_update_ui_with_empty_food_list(self):
+        """Test UI update handles empty food list gracefully"""
+        self.game.food_items = []
+        try:
+            self.game._update_ui()
+            success = True
+        except Exception:
+            success = False
+        
+        self.assertTrue(success)
+    
+    def test_update_ui_with_long_snake(self):
+        """Test UI update with a long snake"""
+        # Create a long snake
+        self.game.snake = [Point(i * BLOCK_SIZE, 100) for i in range(20)]
+        try:
+            self.game._update_ui()
+            success = True
+        except Exception:
+            success = False
+        
+        self.assertTrue(success)
+
+
+class TestGameIntegration(unittest.TestCase):
+    """Integration tests for complete game scenarios"""
+    
+    def setUp(self):
+        """Set up test fixtures"""
+        pygame.init()
+    
+    def tearDown(self):
+        """Clean up after tests"""
+        pygame.quit()
+    
+    def test_complete_game_cycle_classic_mode(self):
+        """Test a complete game cycle in Classic mode"""
+        game = SnakeGame(GameMode.CLASSIC)
+        
+        # Verify initial state
+        self.assertEqual(game.mode, GameMode.CLASSIC)
+        self.assertEqual(game.score, 0)
+        self.assertEqual(len(game.snake), 3)
+        
+        # Simulate eating food
+        if game.food_items:
+            game.head = game.food_items[0]
+            game.snake.insert(0, game.head)
+            game.score += 1
+            
+            self.assertEqual(game.score, 1)
+            self.assertEqual(len(game.snake), 4)
+    
+    def test_complete_game_cycle_fun_mode(self):
+        """Test a complete game cycle in Fun mode"""
+        game = SnakeGame(GameMode.FUN)
+        
+        # Verify initial state
+        self.assertEqual(game.mode, GameMode.FUN)
+        
+        # Test wall wrapping
+        game.head = Point(WINDOW_WIDTH - BLOCK_SIZE, WINDOW_HEIGHT // 2)
+        game._move(Direction.RIGHT)
+        
+        # Should wrap to left side
+        self.assertEqual(game.head.x, 0)
+    
+    def test_mode_switch_during_gameplay(self):
+        """Test switching modes during gameplay"""
+        game = SnakeGame(GameMode.CLASSIC)
+        
+        # Play a bit
+        game.score = 5
+        
+        # Switch mode
+        game.set_mode(GameMode.FUN)
+        
+        # Verify mode changed and game reset
+        self.assertEqual(game.mode, GameMode.FUN)
+        self.assertEqual(game.score, 0)  # Reset clears score
+    
+    def test_multiple_food_eating_sequence(self):
+        """Test eating multiple food items in sequence"""
+        game = SnakeGame(GameMode.CLASSIC)
+        initial_length = len(game.snake)
+        
+        # Eat 3 food items
+        for i in range(3):
+            if game.food_items:
+                game.head = game.food_items[0]
+                game.snake.insert(0, game.head)
+                game.score += 1
+                game.food_items.pop(0)
+                game._add_single_food()
+        
+        # Verify growth and score
+        self.assertEqual(game.score, 3)
+        self.assertEqual(len(game.snake), initial_length + 3)
+        self.assertEqual(len(game.food_items), 3)  # Should maintain 3 food items

@@ -1,6 +1,6 @@
 # 🐍 Classic Snake Game
 
-This is my first playdate with my new friend Bob (https://www.ibm.com/products/bob). Done while killing some time at the airport. Really impressive
+This is my first playdate with my new friend Bob (https://www.ibm.com/products/bob). Done while killing some time at the airport. Really impressive!
 
 
 A classic snake game implementation in Python using Pygame. Control the snake to eat food, grow longer, and avoid hitting the walls or yourself!

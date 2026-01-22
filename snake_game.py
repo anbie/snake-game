@@ -60,7 +60,7 @@ class SnakeGame:
         while len(self.food_items) < 3 and attempts < max_attempts:
             x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
             y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
-            new_food = Point(x+10, y)
+            new_food = Point(x, y)
             
             # Check if position is valid (not on snake or other food)
             if new_food not in self.snake and new_food not in self.food_items:

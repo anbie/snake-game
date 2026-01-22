@@ -1,33 +1,34 @@
 import unittest
 import pygame
 from unittest.mock import Mock, patch, MagicMock
-from snake_game import SnakeGame, Direction, Point, BLOCK_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT
+from snake_game import SnakeGame, Direction, Point, GameMode, BLOCK_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT
 
 
-class TestSnakeGame(unittest.TestCase):
-    """Test suite for Snake Game!"""
+class TestSnakeGameClassicMode(unittest.TestCase):
+    """Test suite for Snake Game in Classic Mode"""
     
     def setUp(self):
         """Set up test fixtures before each test method"""
         pygame.init()
-        self.game = SnakeGame()
+        self.game = SnakeGame(mode=GameMode.CLASSIC)
     
     def tearDown(self):
         """Clean up after each test method"""
         pygame.quit()
     
     # Test initialization
-    def test_game_initialization(self):
-        """Test that game initializes with correct default values"""
+    def test_game_initialization_classic(self):
+        """Test that game initializes with correct default values in Classic mode"""
         self.assertIsNotNone(self.game.display)
         self.assertIsNotNone(self.game.clock)
         self.assertEqual(self.game.direction, Direction.RIGHT)
         self.assertEqual(len(self.game.snake), 3)
         self.assertEqual(self.game.score, 0)
         self.assertEqual(len(self.game.food_items), 3)
+        self.assertEqual(self.game.mode, GameMode.CLASSIC)
     
-    def test_reset(self):
-        """Test that reset method properly resets game state"""
+    def test_reset_classic(self):
+        """Test that reset method properly resets game state in Classic mode"""
         # Modify game state
         self.game.score = 10
         self.game.direction = Direction.LEFT
@@ -41,6 +42,114 @@ class TestSnakeGame(unittest.TestCase):
         self.assertEqual(self.game.direction, Direction.RIGHT)
         self.assertEqual(len(self.game.snake), 3)
         self.assertEqual(len(self.game.food_items), 3)
+    
+    # Test collision with walls in Classic mode
+    def test_collision_with_left_wall_classic(self):
+        """Test collision detection with left wall in Classic mode"""
+        self.game.head = Point(-BLOCK_SIZE, WINDOW_HEIGHT // 2)
+        self.assertTrue(self.game._is_collision())
+    
+    def test_collision_with_right_wall_classic(self):
+        """Test collision detection with right wall in Classic mode"""
+        self.game.head = Point(WINDOW_WIDTH, WINDOW_HEIGHT // 2)
+        self.assertTrue(self.game._is_collision())
+    
+    def test_collision_with_top_wall_classic(self):
+        """Test collision detection with top wall in Classic mode"""
+        self.game.head = Point(WINDOW_WIDTH // 2, -BLOCK_SIZE)
+        self.assertTrue(self.game._is_collision())
+    
+    def test_collision_with_bottom_wall_classic(self):
+        """Test collision detection with bottom wall in Classic mode"""
+        self.game.head = Point(WINDOW_WIDTH // 2, WINDOW_HEIGHT)
+        self.assertTrue(self.game._is_collision())
+    
+    def test_no_collision_in_valid_position_classic(self):
+        """Test that no collision is detected in valid position in Classic mode"""
+        self.game.head = Point(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
+        self.game.snake = [self.game.head]
+        self.assertFalse(self.game._is_collision())
+
+
+class TestSnakeGameFunMode(unittest.TestCase):
+    """Test suite for Snake Game in Fun Mode"""
+    
+    def setUp(self):
+        """Set up test fixtures before each test method"""
+        pygame.init()
+        self.game = SnakeGame(mode=GameMode.FUN)
+    
+    def tearDown(self):
+        """Clean up after each test method"""
+        pygame.quit()
+    
+    # Test initialization
+    def test_game_initialization_fun(self):
+        """Test that game initializes with correct default values in Fun mode"""
+        self.assertIsNotNone(self.game.display)
+        self.assertIsNotNone(self.game.clock)
+        self.assertEqual(self.game.direction, Direction.RIGHT)
+        self.assertEqual(len(self.game.snake), 3)
+        self.assertEqual(self.game.score, 0)
+        self.assertEqual(len(self.game.food_items), 3)
+        self.assertEqual(self.game.mode, GameMode.FUN)
+    
+    # Test wall wrapping in Fun mode
+    def test_wrap_right_wall_fun(self):
+        """Test that snake wraps around when hitting right wall in Fun mode"""
+        self.game.head = Point(WINDOW_WIDTH - BLOCK_SIZE, WINDOW_HEIGHT // 2)
+        self.game._move(Direction.RIGHT)
+        self.assertEqual(self.game.head.x, 0)
+        self.assertEqual(self.game.head.y, WINDOW_HEIGHT // 2)
+    
+    def test_wrap_left_wall_fun(self):
+        """Test that snake wraps around when hitting left wall in Fun mode"""
+        self.game.head = Point(0, WINDOW_HEIGHT // 2)
+        self.game._move(Direction.LEFT)
+        self.assertEqual(self.game.head.x, WINDOW_WIDTH - BLOCK_SIZE)
+        self.assertEqual(self.game.head.y, WINDOW_HEIGHT // 2)
+    
+    def test_wrap_bottom_wall_fun(self):
+        """Test that snake wraps around when hitting bottom wall in Fun mode"""
+        self.game.head = Point(WINDOW_WIDTH // 2, WINDOW_HEIGHT - BLOCK_SIZE)
+        self.game._move(Direction.DOWN)
+        self.assertEqual(self.game.head.x, WINDOW_WIDTH // 2)
+        self.assertEqual(self.game.head.y, 0)
+    
+    def test_wrap_top_wall_fun(self):
+        """Test that snake wraps around when hitting top wall in Fun mode"""
+        self.game.head = Point(WINDOW_WIDTH // 2, 0)
+        self.game._move(Direction.UP)
+        self.assertEqual(self.game.head.x, WINDOW_WIDTH // 2)
+        self.assertEqual(self.game.head.y, WINDOW_HEIGHT - BLOCK_SIZE)
+    
+    def test_no_wall_collision_fun(self):
+        """Test that walls don't cause collision in Fun mode"""
+        # Test positions at walls
+        self.game.head = Point(-BLOCK_SIZE, WINDOW_HEIGHT // 2)
+        self.assertFalse(self.game._is_collision())
+        
+        self.game.head = Point(WINDOW_WIDTH, WINDOW_HEIGHT // 2)
+        self.assertFalse(self.game._is_collision())
+        
+        self.game.head = Point(WINDOW_WIDTH // 2, -BLOCK_SIZE)
+        self.assertFalse(self.game._is_collision())
+        
+        self.game.head = Point(WINDOW_WIDTH // 2, WINDOW_HEIGHT)
+        self.assertFalse(self.game._is_collision())
+
+
+class TestSnakeGameCommon(unittest.TestCase):
+    """Test suite for common Snake Game functionality across both modes"""
+    
+    def setUp(self):
+        """Set up test fixtures before each test method"""
+        pygame.init()
+        self.game = SnakeGame()
+    
+    def tearDown(self):
+        """Clean up after each test method"""
+        pygame.quit()
     
     # Test snake head position
     def test_initial_head_position(self):
@@ -131,27 +240,7 @@ class TestSnakeGame(unittest.TestCase):
         self.assertEqual(self.game.head.x, initial_x)
         self.assertEqual(self.game.head.y, initial_y + BLOCK_SIZE)
     
-    # Test collision detection
-    def test_collision_with_left_wall(self):
-        """Test collision detection with left wall"""
-        self.game.head = Point(-BLOCK_SIZE, WINDOW_HEIGHT // 2)
-        self.assertTrue(self.game._is_collision())
-    
-    def test_collision_with_right_wall(self):
-        """Test collision detection with right wall"""
-        self.game.head = Point(WINDOW_WIDTH, WINDOW_HEIGHT // 2)
-        self.assertTrue(self.game._is_collision())
-    
-    def test_collision_with_top_wall(self):
-        """Test collision detection with top wall"""
-        self.game.head = Point(WINDOW_WIDTH // 2, -BLOCK_SIZE)
-        self.assertTrue(self.game._is_collision())
-    
-    def test_collision_with_bottom_wall(self):
-        """Test collision detection with bottom wall"""
-        self.game.head = Point(WINDOW_WIDTH // 2, WINDOW_HEIGHT)
-        self.assertTrue(self.game._is_collision())
-    
+    # Test collision with self (same for both modes)
     def test_collision_with_self(self):
         """Test collision detection with snake's own body"""
         # Create a snake that will collide with itself
@@ -171,12 +260,6 @@ class TestSnakeGame(unittest.TestCase):
         # Check collision with a point in the body
         collision_point = Point(100, 120)
         self.assertTrue(self.game._is_collision(collision_point))
-    
-    def test_no_collision_in_valid_position(self):
-        """Test that no collision is detected in valid position"""
-        self.game.head = Point(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
-        self.game.snake = [self.game.head]
-        self.assertFalse(self.game._is_collision())
     
     # Test food eating
     def test_score_increases_when_food_eaten(self):
@@ -218,7 +301,6 @@ class TestSnakeGame(unittest.TestCase):
     
     def test_add_single_food_not_on_snake(self):
         """Test that newly added food is not on snake"""
-        # Fill most of the board with snake to test collision avoidance
         self.game._add_single_food()
         new_food = self.game.food_items[-1]
         self.assertNotIn(new_food, self.game.snake)
@@ -230,25 +312,22 @@ class TestSnakeGame(unittest.TestCase):
         new_food = self.game.food_items[-1]
         self.assertNotIn(new_food, initial_foods)
     
-    # Test game state
-    def test_game_over_on_wall_collision(self):
-        """Test that game ends when snake hits wall"""
-        # Move snake to wall
-        self.game.head = Point(-BLOCK_SIZE, WINDOW_HEIGHT // 2)
-        self.game.snake.insert(0, self.game.head)
-        
-        # Check collision
-        game_over = self.game._is_collision()
-        self.assertTrue(game_over)
+    # Test mode switching
+    def test_set_mode_classic(self):
+        """Test switching to Classic mode"""
+        self.game.set_mode(GameMode.CLASSIC)
+        self.assertEqual(self.game.mode, GameMode.CLASSIC)
     
-    def test_game_continues_in_valid_state(self):
-        """Test that game continues when in valid state"""
-        # Ensure snake is in valid position
-        self.game.head = Point(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
-        self.game.snake = [self.game.head]
-        
-        game_over = self.game._is_collision()
-        self.assertFalse(game_over)
+    def test_set_mode_fun(self):
+        """Test switching to Fun mode"""
+        self.game.set_mode(GameMode.FUN)
+        self.assertEqual(self.game.mode, GameMode.FUN)
+    
+    def test_mode_switch_resets_game(self):
+        """Test that switching mode resets the game"""
+        self.game.score = 10
+        self.game.set_mode(GameMode.FUN)
+        self.assertEqual(self.game.score, 0)
     
     # Test Direction enum
     def test_direction_enum_values(self):
@@ -257,6 +336,12 @@ class TestSnakeGame(unittest.TestCase):
         self.assertEqual(Direction.LEFT.value, 2)
         self.assertEqual(Direction.UP.value, 3)
         self.assertEqual(Direction.DOWN.value, 4)
+    
+    # Test GameMode enum
+    def test_game_mode_enum_values(self):
+        """Test that GameMode enum has correct values"""
+        self.assertEqual(GameMode.CLASSIC.value, 1)
+        self.assertEqual(GameMode.FUN.value, 2)
     
     # Test Point namedtuple
     def test_point_creation(self):

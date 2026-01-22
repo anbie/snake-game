@@ -12,23 +12,48 @@ A classic snake game implementation in Python using Pygame. Control the snake to
 
 ## 🎮 Game Features
 
-- Classic snake gameplay mechanics with **3 colorful food items** (Red, Orange, Yellow)
+- **Two Game Modes:**
+  - 🏛️ **Classic Mode**: Game ends when snake hits walls
+  - 🎪 **Fun Mode**: Snake wraps around walls (appears on opposite side)
+- Interactive startup menu to select game mode
+- **3 colorful food items** always on screen (Red, Orange, Yellow)
 - Smooth controls using arrow keys
 - Score tracking
 - Game over detection with restart option
+- Return to menu option after game over
 - Clean and simple graphics
 - Comprehensive unit tests with CI/CD integration
 
 ## 🎯 How to Play
 
+### Starting the Game
+1. Run the game and you'll see a menu with two options
+2. Use **UP/DOWN** arrow keys to select a mode
+3. Press **ENTER** or **SPACE** to start
+
+### Game Modes
+
+#### 🏛️ Classic Mode
+- Traditional snake gameplay
+- Game ends when you hit a wall
+- More challenging!
+
+#### 🎪 Fun Mode
+- Snake wraps around walls
+- Hit the right wall → appear on the left
+- Hit the top wall → appear at the bottom
+- Endless fun!
+
+### Controls
 - Use **Arrow Keys** to control the snake's direction:
   - ⬆️ **UP** - Move up
   - ⬇️ **DOWN** - Move down
   - ⬅️ **LEFT** - Move left
   - ➡️ **RIGHT** - Move right
 - Eat the colorful food items (red, orange, yellow) to grow longer and increase your score
-- Avoid hitting the walls or your own body
+- Avoid hitting your own body (in both modes)
 - Press **SPACE** to restart after game over
+- Press **ESC** to return to menu after game over
 
 ## 🚀 Installation
 
@@ -96,12 +121,26 @@ snake-game/
 
 ## 🎓 Game Mechanics
 
+### Common to Both Modes
 - The snake starts with 3 segments
-- **3 food items** are always present on the board with different colors
+- **3 food items** are always present on the board with different colors (Red, Orange, Yellow)
 - Each food eaten adds 1 point to the score and 1 segment to the snake
 - When a food is eaten, a new one spawns to maintain 3 food items
-- The game ends when the snake hits a wall or itself
 - Food spawns randomly on the grid, avoiding the snake's body
+- Hitting your own body ends the game in both modes
+
+### Classic Mode Specific
+- Game ends when snake hits any wall
+- More challenging and traditional gameplay
+
+### Fun Mode Specific
+- Snake wraps around when hitting walls:
+  - Hit right wall → appear on left side
+  - Hit left wall → appear on right side
+  - Hit top wall → appear at bottom
+  - Hit bottom wall → appear at top
+- Only hitting yourself ends the game
+- Allows for longer gameplay sessions
 
 ## 🧪 Testing
 
@@ -132,11 +171,14 @@ python -m unittest test_snake_game.py -v
 ### Test Coverage
 
 The test suite includes:
-- **50+ unit tests** covering all game functions
-- Initialization and reset tests
+- **60+ unit tests** covering all game functions in both modes
+- Initialization and reset tests for both Classic and Fun modes
 - Movement and collision detection tests
+- Wall collision tests (Classic mode)
+- Wall wrapping tests (Fun mode)
 - Food placement and eating mechanics tests
 - Game state and scoring tests
+- Mode switching tests
 - Boundary and edge case tests
 
 ### Continuous Integration

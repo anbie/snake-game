@@ -5,7 +5,7 @@ from snake_game import SnakeGame, Direction, Point, BLOCK_SIZE, WINDOW_WIDTH, WI
 
 
 class TestSnakeGame(unittest.TestCase):
-    """Test suite for Snake Game"""
+    """Test suite for Snake Game!"""
     
     def setUp(self):
         """Set up test fixtures before each test method"""

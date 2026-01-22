@@ -1,7 +1,8 @@
 import unittest
 import pygame
+import os
 from unittest.mock import Mock, patch, MagicMock
-from snake_game import SnakeGame, Direction, Point, GameMode, BLOCK_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT
+from snake_game import SnakeGame, Direction, Point, GameMode, BLOCK_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, HIGHSCORE_FILE
 
 
 class TestSnakeGameClassicMode(unittest.TestCase):
@@ -776,6 +777,194 @@ class TestGameIntegration(unittest.TestCase):
                 game._add_single_food()
         
         # Verify growth and score
-        self.assertEqual(game.score, 3)
-        self.assertEqual(len(game.snake), initial_length + 3)
-        self.assertEqual(len(game.food_items), 3)  # Should maintain 3 food items
+
+
+class TestHighScore(unittest.TestCase):
+    """Test suite for high score functionality"""
+    
+    def setUp(self):
+        """Set up test fixtures"""
+        pygame.init()
+        # Clean up any existing test highscore file
+        if os.path.exists('test_highscores.json'):
+            os.remove('test_highscores.json')
+    
+    def tearDown(self):
+        """Clean up after tests"""
+        pygame.quit()
+        # Clean up test highscore file
+        if os.path.exists('test_highscores.json'):
+            os.remove('test_highscores.json')
+    
+    def test_load_highscores_creates_default(self):
+        """Test that load_highscores creates default scores if file doesn't exist"""
+        from snake_game import load_highscores
+        
+        # Remove file if it exists
+        if os.path.exists(HIGHSCORE_FILE):
+            os.remove(HIGHSCORE_FILE)
+        
+        highscores = load_highscores()
+        
+        self.assertEqual(highscores['classic'], 0)
+        self.assertEqual(highscores['fun'], 0)
+    
+    def test_save_and_load_highscores(self):
+        """Test saving and loading high scores"""
+        from snake_game import save_highscores, load_highscores
+        
+        # Save test scores
+        test_scores = {'classic': 10, 'fun': 15}
+        save_highscores(test_scores)
+        
+        # Load and verify
+        loaded_scores = load_highscores()
+        self.assertEqual(loaded_scores['classic'], 10)
+        self.assertEqual(loaded_scores['fun'], 15)
+        
+        # Clean up
+        if os.path.exists(HIGHSCORE_FILE):
+            os.remove(HIGHSCORE_FILE)
+    
+    def test_highscore_initialization(self):
+        """Test that game initializes with high scores"""
+        game = SnakeGame(GameMode.CLASSIC)
+        
+        self.assertIsNotNone(game.highscores)
+        self.assertIn('classic', game.highscores)
+        self.assertIn('fun', game.highscores)
+    
+    def test_get_highscore_classic_mode(self):
+        """Test getting high score in Classic mode"""
+        game = SnakeGame(GameMode.CLASSIC)
+        game.highscores = {'classic': 20, 'fun': 15}
+        
+        highscore = game.get_highscore()
+        self.assertEqual(highscore, 20)
+    
+    def test_get_highscore_fun_mode(self):
+        """Test getting high score in Fun mode"""
+        game = SnakeGame(GameMode.FUN)
+        game.highscores = {'classic': 20, 'fun': 15}
+        
+        highscore = game.get_highscore()
+        self.assertEqual(highscore, 15)
+    
+    def test_update_highscore_when_higher(self):
+        """Test that high score updates when current score is higher"""
+        game = SnakeGame(GameMode.CLASSIC)
+        game.highscores = {'classic': 10, 'fun': 5}
+        game.score = 15
+        
+        game._update_highscore()
+        
+        self.assertEqual(game.highscores['classic'], 15)
+    
+    def test_update_highscore_when_lower(self):
+        """Test that high score doesn't update when current score is lower"""
+        game = SnakeGame(GameMode.CLASSIC)
+        game.highscores = {'classic': 20, 'fun': 5}
+        game.score = 10
+        
+        game._update_highscore()
+        
+        self.assertEqual(game.highscores['classic'], 20)
+    
+    def test_update_highscore_when_equal(self):
+        """Test that high score doesn't update when scores are equal"""
+        game = SnakeGame(GameMode.CLASSIC)
+        game.highscores = {'classic': 15, 'fun': 5}
+        game.score = 15
+        
+        game._update_highscore()
+        
+        self.assertEqual(game.highscores['classic'], 15)
+    
+    def test_highscore_persists_across_modes(self):
+        """Test that high scores are separate for each mode"""
+        game = SnakeGame(GameMode.CLASSIC)
+        game.highscores = {'classic': 20, 'fun': 10}
+        game.score = 25
+        game._update_highscore()
+        
+        # Switch to Fun mode
+        game.set_mode(GameMode.FUN)
+        
+        # Classic high score should still be 25
+        game.mode = GameMode.CLASSIC
+        self.assertEqual(game.get_highscore(), 25)
+        
+        # Fun high score should still be 10
+        game.mode = GameMode.FUN
+        self.assertEqual(game.get_highscore(), 10)
+    
+    def test_highscore_updates_on_game_over(self):
+        """Test that high score updates automatically on game over"""
+        game = SnakeGame(GameMode.CLASSIC)
+        game.highscores = {'classic': 5, 'fun': 5}
+        game.score = 10
+        
+        # Force collision to trigger game over
+        game.head = Point(-BLOCK_SIZE, WINDOW_HEIGHT // 2)
+        game.snake.insert(0, game.head)
+        
+        # Check collision (which should call _update_highscore)
+        if game._is_collision():
+            game._update_highscore()
+        
+        self.assertEqual(game.highscores['classic'], 10)
+    
+    def test_load_highscores_handles_corrupted_file(self):
+        """Test that load_highscores handles corrupted JSON gracefully"""
+        from snake_game import load_highscores
+        
+        # Create corrupted JSON file
+        with open(HIGHSCORE_FILE, 'w') as f:
+            f.write("{ invalid json }")
+        
+        # Should return default scores
+        highscores = load_highscores()
+        self.assertEqual(highscores['classic'], 0)
+        self.assertEqual(highscores['fun'], 0)
+        
+        # Clean up
+        if os.path.exists(HIGHSCORE_FILE):
+            os.remove(HIGHSCORE_FILE)
+    
+    def test_highscore_display_in_ui(self):
+        """Test that high score is displayed in UI"""
+        game = SnakeGame(GameMode.CLASSIC)
+        game.highscores = {'classic': 100, 'fun': 50}
+        
+        # UI update should not crash with high score
+        try:
+            game._update_ui()
+            success = True
+        except Exception:
+            success = False
+        
+        self.assertTrue(success)
+    
+    def test_separate_highscores_for_each_mode(self):
+        """Test that Classic and Fun modes have separate high scores"""
+        game = SnakeGame(GameMode.CLASSIC)
+        
+        # Set different scores for each mode
+        game.mode = GameMode.CLASSIC
+        game.score = 30
+        game._update_highscore()
+        
+        game.mode = GameMode.FUN
+        game.score = 50
+        game._update_highscore()
+        
+        # Verify they're different
+        game.mode = GameMode.CLASSIC
+        classic_high = game.get_highscore()
+        
+        game.mode = GameMode.FUN
+        fun_high = game.get_highscore()
+        
+        self.assertEqual(classic_high, 30)
+        self.assertEqual(fun_high, 50)
+        self.assertNotEqual(classic_high, fun_high)

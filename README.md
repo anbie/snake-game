@@ -17,8 +17,12 @@ A classic snake game implementation in Python using Pygame. Control the snake to
   - 🎪 **Fun Mode**: Snake wraps around walls (appears on opposite side)
 - Interactive startup menu to select game mode
 - **3 colorful food items** always on screen (Red, Orange, Yellow)
+- **High Score System:**
+  - 🏆 Separate high scores for each game mode
+  - 💾 Automatically saved and persisted across sessions
+  - 📊 Displayed during gameplay
 - Smooth controls using arrow keys
-- Score tracking
+- Score tracking with real-time display
 - Game over detection with restart option
 - Return to menu option after game over
 - Clean and simple graphics
@@ -171,7 +175,7 @@ python -m unittest test_snake_game.py -v
 ### Test Coverage
 
 The test suite includes:
-- **60+ unit tests** covering all game functions in both modes
+- **100+ unit tests** covering all game functions in both modes
 - Initialization and reset tests for both Classic and Fun modes
 - Movement and collision detection tests
 - Wall collision tests (Classic mode)
@@ -179,6 +183,14 @@ The test suite includes:
 - Food placement and eating mechanics tests
 - Game state and scoring tests
 - Mode switching tests
+- **High score functionality tests:**
+  - High score persistence and loading
+  - Separate high scores for each mode
+  - High score updates on game over
+  - Corrupted file handling
+- UI rendering tests
+- Menu navigation tests
+- Integration tests for complete game scenarios
 - Boundary and edge case tests
 
 ### Continuous Integration

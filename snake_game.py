@@ -1,5 +1,7 @@
 import pygame
 import random
+import json
+import os
 from enum import Enum
 from collections import namedtuple
 
@@ -10,6 +12,7 @@ WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 480
 BLOCK_SIZE = 20
 SPEED = 10
+HIGHSCORE_FILE = 'highscores.json'
 
 # Colors
 WHITE = (255, 255, 255)
@@ -39,12 +42,31 @@ class GameMode(Enum):
 
 Point = namedtuple('Point', 'x, y')
 
+def load_highscores():
+    """Load high scores from file"""
+    if os.path.exists(HIGHSCORE_FILE):
+        try:
+            with open(HIGHSCORE_FILE, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {'classic': 0, 'fun': 0}
+    return {'classic': 0, 'fun': 0}
+
+def save_highscores(highscores):
+    """Save high scores to file"""
+    try:
+        with open(HIGHSCORE_FILE, 'w') as f:
+            json.dump(highscores, f)
+    except IOError:
+        pass  # Silently fail if can't save
+
 class SnakeGame:
     def __init__(self, mode=GameMode.CLASSIC):
         self.display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption('Snake Game')
         self.clock = pygame.time.Clock()
         self.mode = mode
+        self.highscores = load_highscores()
         self.reset()
         
     def reset(self):
@@ -106,6 +128,7 @@ class SnakeGame:
         game_over = False
         if self._is_collision():
             game_over = True
+            self._update_highscore()
             return game_over, self.score
             
         # 4. Check if food eaten and place new food or just move
@@ -143,6 +166,18 @@ class SnakeGame:
                 self.food_items.append(new_food)
                 break
             attempts += 1
+    
+    def _update_highscore(self):
+        """Update high score if current score is higher"""
+        mode_key = 'classic' if self.mode == GameMode.CLASSIC else 'fun'
+        if self.score > self.highscores[mode_key]:
+            self.highscores[mode_key] = self.score
+            save_highscores(self.highscores)
+    
+    def get_highscore(self):
+        """Get high score for current mode"""
+        mode_key = 'classic' if self.mode == GameMode.CLASSIC else 'fun'
+        return self.highscores[mode_key]
     
     def _is_collision(self, pt=None):
         if pt is None:
@@ -183,6 +218,11 @@ class SnakeGame:
         font = pygame.font.Font(None, 36)
         text = font.render(f"Score: {self.score}", True, WHITE)
         self.display.blit(text, [10, 10])
+        
+        # Draw high score
+        highscore = self.get_highscore()
+        highscore_text = font_small.render(f"High Score: {highscore}", True, YELLOW)
+        self.display.blit(highscore_text, [10, 45])
         
         pygame.display.flip()
         

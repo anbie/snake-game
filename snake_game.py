@@ -26,7 +26,7 @@ GRAY = (128, 128, 128)
 LIGHT_GRAY = (200, 200, 200)
 
 # Food colors for variety
-FOOD_COLORS = [RED, ORANGE, YELLOW]
+FOOD_COLORS = [RED, ORANGE, YELLOW, BLUE]
 
 # Direction enum
 class Direction(Enum):

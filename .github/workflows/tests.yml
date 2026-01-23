@@ -12,7 +12,7 @@ jobs:
     
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
     
     steps:
     - name: Checkout code
@@ -43,7 +43,7 @@ jobs:
         xvfb-run -a python -m unittest test_snake_game.py -v
     
     - name: Generate coverage report
-      if: matrix.python-version == '3.11'
+      if: matrix.python-version == '3.14'
       run: |
         pip install coverage
         xvfb-run -a coverage run -m pytest test_snake_game.py
@@ -51,7 +51,7 @@ jobs:
         coverage html
     
     - name: Upload coverage reports
-      if: matrix.python-version == '3.11'
+      if: matrix.python-version == '3.14'
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report

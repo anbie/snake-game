@@ -198,7 +198,7 @@ The test suite includes:
 ### Continuous Integration
 
 Tests run automatically on every commit via GitHub Actions:
-- Tests run on Python 3.8, 3.9, 3.10, and 3.11
+- Tests run on Python 3.8, 3.9, 3.10, 3.11, 3.12, 3.13, and 3.14
 - Automatic code coverage reporting
 - Tests run on both push and pull requests
 

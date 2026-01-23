@@ -12,6 +12,7 @@ WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 480
 BLOCK_SIZE = 20
 SPEED = 10
+NUM_FOOD_ITEMS = 4  # Number of food items on the board
 HIGHSCORE_FILE = 'highscores.json'
 
 # Colors
@@ -87,12 +88,12 @@ class SnakeGame:
         self.reset()
         
     def _place_food(self):
-        """Place 4 food items on the board"""
+        """Place food items on the board"""
         self.food_items = []
         attempts = 0
         max_attempts = 100
         
-        while len(self.food_items) < 4 and attempts < max_attempts:
+        while len(self.food_items) < NUM_FOOD_ITEMS and attempts < max_attempts:
             x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
             y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
             new_food = Point(x, y)
@@ -138,7 +139,7 @@ class SnakeGame:
                 self.score += 1
                 food_eaten = True
                 self.food_items.remove(food)
-                # Add a new food item to maintain 4 food items
+                # Add a new food item to maintain NUM_FOOD_ITEMS
                 self._add_single_food()
                 break
         

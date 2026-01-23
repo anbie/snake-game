@@ -107,7 +107,9 @@ You can modify the following constants in `snake_game.py` to customize the game:
 - `WINDOW_HEIGHT`: Height of the game window (default: 480)
 - `BLOCK_SIZE`: Size of each snake segment (default: 20)
 - `SPEED`: Game speed/FPS (default: 10)
-- Colors: `WHITE`, `BLACK`, `RED`, `GREEN`, `BLUE`
+- `NUM_FOOD_ITEMS`: Number of food items on the board (default: 4)
+- Colors: `WHITE`, `BLACK`, `RED`, `GREEN`, `BLUE`, `ORANGE`, `YELLOW`
+- `FOOD_COLORS`: Array of colors for food items (colors can repeat)
 
 ## 🏗️ Project Structure
 

@@ -179,7 +179,7 @@ class TestSnakeGameCommon(unittest.TestCase):
     def test_food_placement_uniqueness(self):
         """Test that all food items have unique positions"""
         food_positions = set(self.game.food_items)
-        self.assertEqual(len(food_positions), 3)
+        self.assertEqual(len(food_positions), 4)
     
     def test_food_placement_not_on_snake(self):
         """Test that food is not placed on snake body"""

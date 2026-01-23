@@ -87,12 +87,12 @@ class SnakeGame:
         self.reset()
         
     def _place_food(self):
-        """Place 3 food items on the board"""
+        """Place 4 food items on the board"""
         self.food_items = []
         attempts = 0
         max_attempts = 100
         
-        while len(self.food_items) < 3 and attempts < max_attempts:
+        while len(self.food_items) < 4 and attempts < max_attempts:
             x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
             y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
             new_food = Point(x, y)
@@ -138,7 +138,7 @@ class SnakeGame:
                 self.score += 1
                 food_eaten = True
                 self.food_items.remove(food)
-                # Add a new food item to maintain 3 food items
+                # Add a new food item to maintain 4 food items
                 self._add_single_food()
                 break
         

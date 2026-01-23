@@ -25,7 +25,7 @@ class TestSnakeGameClassicMode(unittest.TestCase):
         self.assertEqual(self.game.direction, Direction.RIGHT)
         self.assertEqual(len(self.game.snake), 3)
         self.assertEqual(self.game.score, 0)
-        self.assertEqual(len(self.game.food_items), 3)
+        self.assertEqual(len(self.game.food_items), 4)
         self.assertEqual(self.game.mode, GameMode.CLASSIC)
     
     def test_reset_classic(self):
@@ -42,7 +42,7 @@ class TestSnakeGameClassicMode(unittest.TestCase):
         self.assertEqual(self.game.score, 0)
         self.assertEqual(self.game.direction, Direction.RIGHT)
         self.assertEqual(len(self.game.snake), 3)
-        self.assertEqual(len(self.game.food_items), 3)
+        self.assertEqual(len(self.game.food_items), 4)
     
     # Test collision with walls in Classic mode
     def test_collision_with_left_wall_classic(self):
@@ -92,7 +92,7 @@ class TestSnakeGameFunMode(unittest.TestCase):
         self.assertEqual(self.game.direction, Direction.RIGHT)
         self.assertEqual(len(self.game.snake), 3)
         self.assertEqual(self.game.score, 0)
-        self.assertEqual(len(self.game.food_items), 3)
+        self.assertEqual(len(self.game.food_items), 4)
         self.assertEqual(self.game.mode, GameMode.FUN)
     
     # Test wall wrapping in Fun mode
@@ -173,8 +173,8 @@ class TestSnakeGameCommon(unittest.TestCase):
     
     # Test food placement
     def test_food_placement_count(self):
-        """Test that exactly 3 food items are placed"""
-        self.assertEqual(len(self.game.food_items), 3)
+        """Test that exactly 4 food items are placed"""
+        self.assertEqual(len(self.game.food_items), 4)
     
     def test_food_placement_uniqueness(self):
         """Test that all food items have unique positions"""
@@ -385,7 +385,7 @@ class TestSnakeGameCommon(unittest.TestCase):
             self.game.food_items.pop(0)
             self.game._add_single_food()
             
-            self.assertEqual(len(self.game.food_items), 3)
+            self.assertEqual(len(self.game.food_items), 4)
 
 
 class TestGameConstants(unittest.TestCase):

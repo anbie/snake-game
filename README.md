@@ -16,7 +16,7 @@ A classic snake game implementation in Python using Pygame. Control the snake to
   - 🏛️ **Classic Mode**: Game ends when snake hits walls
   - 🎪 **Fun Mode**: Snake wraps around walls (appears on opposite side)
 - Interactive startup menu to select game mode
-- **3 colorful food items** always on screen (Red, Orange, Yellow)
+- **4 colorful food items** always on screen (Red, Orange, Yellow, Blue)
 - **High Score System:**
   - 🏆 Separate high scores for each game mode
   - 💾 Automatically saved and persisted across sessions
@@ -127,9 +127,9 @@ snake-game/
 
 ### Common to Both Modes
 - The snake starts with 3 segments
-- **3 food items** are always present on the board with different colors (Red, Orange, Yellow)
+- **4 food items** are always present on the board with different colors (Red, Orange, Yellow, Blue)
 - Each food eaten adds 1 point to the score and 1 segment to the snake
-- When a food is eaten, a new one spawns to maintain 3 food items
+- When a food is eaten, a new one spawns to maintain 4 food items
 - Food spawns randomly on the grid, avoiding the snake's body
 - Hitting your own body ends the game in both modes
 

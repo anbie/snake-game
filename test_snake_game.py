@@ -407,14 +407,6 @@ class TestGameConstants(unittest.TestCase):
         self.assertEqual(WINDOW_HEIGHT % BLOCK_SIZE, 0)
 
 
-if __name__ == '__main__':
-    # Run tests with verbose output
-    unittest.main(verbosity=2)
-
-# Made with Bob
-
-
-
 class TestShowMenu(unittest.TestCase):
     """Test suite for the show_menu function"""
     
@@ -777,6 +769,8 @@ class TestGameIntegration(unittest.TestCase):
                 game._add_single_food()
         
         # Verify growth and score
+        self.assertEqual(game.score, 3)
+        self.assertEqual(len(game.snake), initial_length + 3)
 
 
 class TestHighScore(unittest.TestCase):
@@ -968,3 +962,10 @@ class TestHighScore(unittest.TestCase):
         self.assertEqual(classic_high, 30)
         self.assertEqual(fun_high, 50)
         self.assertNotEqual(classic_high, fun_high)
+
+
+if __name__ == '__main__':
+    # Run tests with verbose output
+    unittest.main(verbosity=2)
+
+# Made with Bob

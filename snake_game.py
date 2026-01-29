@@ -37,7 +37,7 @@ WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 480
 BLOCK_SIZE = 20
 SPEED = 10
-NUM_FOOD_ITEMS = 8  # Number of food items on the board
+NUM_FOOD_ITEMS = 9  # Number of food items on the board
 HIGHSCORE_FILE = 'highscores.json'
 
 # Colors

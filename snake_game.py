@@ -1,3 +1,28 @@
+"""
+Snake Game Module
+=================
+
+A classic Snake game implementation using Pygame with two game modes:
+Classic mode (game ends on wall collision) and Fun mode (snake wraps around walls).
+
+The game features:
+    - Two game modes (Classic and Fun)
+    - Multiple food items on the board
+    - High score tracking
+    - Colorful graphics
+    - Menu system for mode selection
+
+Constants:
+    WINDOW_WIDTH (int): Width of the game window in pixels
+    WINDOW_HEIGHT (int): Height of the game window in pixels
+    BLOCK_SIZE (int): Size of each game block in pixels
+    SPEED (int): Game speed (frames per second)
+    NUM_FOOD_ITEMS (int): Number of food items on the board
+    HIGHSCORE_FILE (str): Filename for storing high scores
+
+.. moduleauthor:: Snake Game Developer
+"""
+
 import pygame
 import random
 import json
@@ -29,22 +54,60 @@ LIGHT_GRAY = (200, 200, 200)
 # Food colors for variety
 FOOD_COLORS = [RED, ORANGE, YELLOW, BLUE]
 
-# Direction enum
+
 class Direction(Enum):
+    """
+    Enumeration for snake movement directions.
+    
+    Attributes:
+        RIGHT (int): Move right direction
+        LEFT (int): Move left direction
+        UP (int): Move up direction
+        DOWN (int): Move down direction
+    """
     RIGHT = 1
     LEFT = 2
     UP = 3
     DOWN = 4
 
-# Game mode enum
+
 class GameMode(Enum):
+    """
+    Enumeration for game modes.
+    
+    Attributes:
+        CLASSIC (int): Classic mode where game ends when hitting walls
+        FUN (int): Fun mode where snake wraps around when hitting walls
+    """
     CLASSIC = 1  # Game ends when hitting wall
     FUN = 2      # Snake wraps around when hitting wall
 
+
 Point = namedtuple('Point', 'x, y')
+"""
+A named tuple representing a 2D point.
+
+Attributes:
+    x (int): X coordinate
+    y (int): Y coordinate
+"""
+
 
 def load_highscores():
-    """Load high scores from file"""
+    """
+    Load high scores from the JSON file.
+    
+    Reads the high scores from the HIGHSCORE_FILE. If the file doesn't exist
+    or contains invalid JSON, returns default scores of 0 for both modes.
+    
+    :return: Dictionary containing high scores for 'classic' and 'fun' modes
+    :rtype: dict
+    
+    Example:
+        >>> scores = load_highscores()
+        >>> print(scores)
+        {'classic': 10, 'fun': 15}
+    """
     if os.path.exists(HIGHSCORE_FILE):
         try:
             with open(HIGHSCORE_FILE, 'r') as f:
@@ -53,16 +116,60 @@ def load_highscores():
             return {'classic': 0, 'fun': 0}
     return {'classic': 0, 'fun': 0}
 
+
 def save_highscores(highscores):
-    """Save high scores to file"""
+    """
+    Save high scores to the JSON file.
+    
+    Writes the high scores dictionary to HIGHSCORE_FILE. Silently fails
+    if the file cannot be written.
+    
+    :param highscores: Dictionary containing high scores for both game modes
+    :type highscores: dict
+    
+    Example:
+        >>> save_highscores({'classic': 10, 'fun': 15})
+    """
     try:
         with open(HIGHSCORE_FILE, 'w') as f:
             json.dump(highscores, f)
     except IOError:
         pass  # Silently fail if can't save
 
+
 class SnakeGame:
+    """
+    Main Snake Game class.
+    
+    This class manages the game state, rendering, and game logic for the Snake game.
+    It supports two game modes: Classic (walls are deadly) and Fun (walls wrap around).
+    
+    :param mode: The game mode to use, defaults to GameMode.CLASSIC
+    :type mode: GameMode, optional
+    
+    Attributes:
+        display (pygame.Surface): The game display surface
+        clock (pygame.time.Clock): Clock for controlling game speed
+        mode (GameMode): Current game mode
+        highscores (dict): Dictionary of high scores for both modes
+        direction (Direction): Current movement direction of the snake
+        head (Point): Current position of the snake's head
+        snake (list): List of Points representing the snake's body
+        score (int): Current game score
+        food_items (list): List of Points representing food positions
+    
+    Example:
+        >>> game = SnakeGame(GameMode.CLASSIC)
+        >>> game_over, score = game.play_step()
+    """
+    
     def __init__(self, mode=GameMode.CLASSIC):
+        """
+        Initialize the Snake Game.
+        
+        :param mode: The game mode to use, defaults to GameMode.CLASSIC
+        :type mode: GameMode, optional
+        """
         self.display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption('Snake Game')
         self.clock = pygame.time.Clock()
@@ -71,6 +178,12 @@ class SnakeGame:
         self.reset()
         
     def reset(self):
+        """
+        Reset the game to initial state.
+        
+        Resets the snake position, direction, score, and places new food items.
+        Called at game start and when restarting after game over.
+        """
         self.direction = Direction.RIGHT
         self.head = Point(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
         self.snake = [
@@ -83,12 +196,22 @@ class SnakeGame:
         self._place_food()
         
     def set_mode(self, mode):
-        """Set the game mode"""
+        """
+        Set the game mode and reset the game.
+        
+        :param mode: The new game mode to use
+        :type mode: GameMode
+        """
         self.mode = mode
         self.reset()
         
     def _place_food(self):
-        """Place food items on the board"""
+        """
+        Place multiple food items on the board.
+        
+        Attempts to place NUM_FOOD_ITEMS food items in valid positions
+        (not on the snake or other food). Makes up to 100 attempts per food item.
+        """
         self.food_items = []
         attempts = 0
         max_attempts = 100
@@ -104,6 +227,21 @@ class SnakeGame:
             attempts += 1
             
     def play_step(self):
+        """
+        Execute one step of the game loop.
+        
+        Handles user input, moves the snake, checks for collisions and food consumption,
+        updates the UI, and controls the game speed.
+        
+        :return: Tuple of (game_over, score) where game_over is True if the game ended
+        :rtype: tuple(bool, int)
+        
+        Example:
+            >>> game = SnakeGame()
+            >>> game_over, score = game.play_step()
+            >>> if game_over:
+            ...     print(f"Game Over! Final score: {score}")
+        """
         # 1. Collect user input
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -153,7 +291,12 @@ class SnakeGame:
         return game_over, self.score
     
     def _add_single_food(self):
-        """Add a single food item to the board"""
+        """
+        Add a single food item to the board.
+        
+        Attempts to place one food item in a valid position (not on the snake
+        or other food). Makes up to 100 attempts.
+        """
         attempts = 0
         max_attempts = 100
         
@@ -169,18 +312,39 @@ class SnakeGame:
             attempts += 1
     
     def _update_highscore(self):
-        """Update high score if current score is higher"""
+        """
+        Update the high score if the current score is higher.
+        
+        Compares the current score with the saved high score for the current
+        game mode and updates it if necessary. Saves the updated scores to file.
+        """
         mode_key = 'classic' if self.mode == GameMode.CLASSIC else 'fun'
         if self.score > self.highscores[mode_key]:
             self.highscores[mode_key] = self.score
             save_highscores(self.highscores)
     
     def get_highscore(self):
-        """Get high score for current mode"""
+        """
+        Get the high score for the current game mode.
+        
+        :return: The high score for the current mode
+        :rtype: int
+        """
         mode_key = 'classic' if self.mode == GameMode.CLASSIC else 'fun'
         return self.highscores[mode_key]
     
     def _is_collision(self, pt=None):
+        """
+        Check if there is a collision at the given point.
+        
+        Checks for wall collision (in Classic mode) and self-collision.
+        In Fun mode, wall collision is not checked as the snake wraps around.
+        
+        :param pt: The point to check for collision, defaults to snake's head
+        :type pt: Point, optional
+        :return: True if there is a collision, False otherwise
+        :rtype: bool
+        """
         if pt is None:
             pt = self.head
         
@@ -197,6 +361,12 @@ class SnakeGame:
         return False
         
     def _update_ui(self):
+        """
+        Update the game display.
+        
+        Renders the snake, food items, score, high score, and game mode indicator
+        on the display surface.
+        """
         self.display.fill(BLACK)
         
         # Draw mode indicator
@@ -228,6 +398,15 @@ class SnakeGame:
         pygame.display.flip()
         
     def _move(self, direction):
+        """
+        Move the snake's head in the specified direction.
+        
+        Updates the head position based on the direction. In Fun mode,
+        wraps the snake around when it reaches the screen boundaries.
+        
+        :param direction: The direction to move the snake
+        :type direction: Direction
+        """
         x = self.head.x
         y = self.head.y
         if direction == Direction.RIGHT:
@@ -252,8 +431,24 @@ class SnakeGame:
             
         self.head = Point(x, y)
 
+
 def show_menu(display):
-    """Display the game mode selection menu"""
+    """
+    Display the game mode selection menu.
+    
+    Shows a menu where the player can select between Classic and Fun game modes
+    using arrow keys and Enter. The menu includes descriptions of each mode.
+    
+    :param display: The pygame display surface to render the menu on
+    :type display: pygame.Surface
+    :return: The selected game mode
+    :rtype: GameMode
+    
+    Example:
+        >>> display = pygame.display.set_mode((640, 480))
+        >>> mode = show_menu(display)
+        >>> print(f"Selected mode: {mode.name}")
+    """
     clock = pygame.time.Clock()
     selected = 0  # 0 for Classic, 1 for Fun
     
@@ -321,7 +516,17 @@ def show_menu(display):
         
         clock.tick(30)
 
+
 def main():
+    """
+    Main entry point for the Snake Game.
+    
+    Initializes the game, displays the menu for mode selection, and runs
+    the main game loop. Handles game over state and allows restarting or
+    returning to the menu.
+    
+    The game loop continues until the user quits the application.
+    """
     display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption('Snake Game')
     
@@ -370,6 +575,7 @@ def main():
                             mode = show_menu(display)
                             game.set_mode(mode)
                             waiting = False
+
 
 if __name__ == '__main__':
     main()

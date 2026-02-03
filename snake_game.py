@@ -30,15 +30,13 @@ import os
 from enum import Enum
 from collections import namedtuple
 
-pygame.init()
-
 # Game constants
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 480
 BLOCK_SIZE = 20
 SPEED = 10
 NUM_FOOD_ITEMS = 20  # Number of food items on the board
-HIGHSCORE_FILE = 'highscores.json'
+HIGHSCORE_FILE = os.environ.get('SNAKE_HIGHSCORE_FILE', 'highscores.json')
 
 # Colors
 WHITE = (255, 255, 255)
@@ -170,11 +168,14 @@ class SnakeGame:
         :param mode: The game mode to use, defaults to GameMode.CLASSIC
         :type mode: GameMode, optional
         """
+        if not pygame.get_init():
+            pygame.init()
         self.display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption('Snake Game')
         self.clock = pygame.time.Clock()
         self.mode = mode
         self.highscores = load_highscores()
+        self.quit_prompt = False
         self.reset()
         
     def reset(self):
@@ -192,6 +193,7 @@ class SnakeGame:
             Point(self.head.x - (2 * BLOCK_SIZE), self.head.y)
         ]
         self.score = 0
+        self.quit_prompt = False
         self.food_items = []
         self._place_food()
         
@@ -213,18 +215,20 @@ class SnakeGame:
         (not on the snake or other food). Makes up to 100 attempts per food item.
         """
         self.food_items = []
-        attempts = 0
         max_attempts = 100
-        
-        while len(self.food_items) < NUM_FOOD_ITEMS and attempts < max_attempts:
-            x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
-            y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
-            new_food = Point(x, y)
-            
-            # Check if position is valid (not on snake or other food)
-            if new_food not in self.snake and new_food not in self.food_items:
-                self.food_items.append(new_food)
-            attempts += 1
+
+        for _ in range(NUM_FOOD_ITEMS):
+            attempts = 0
+            while attempts < max_attempts:
+                x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
+                y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
+                new_food = Point(x, y)
+
+                # Check if position is valid (not on snake or other food)
+                if new_food not in self.snake and new_food not in self.food_items:
+                    self.food_items.append(new_food)
+                    break
+                attempts += 1
             
     def play_step(self):
         """
@@ -248,6 +252,15 @@ class SnakeGame:
                 pygame.quit()
                 quit()
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    if self.quit_prompt:
+                        pygame.quit()
+                        quit()
+                    self.quit_prompt = True
+                    continue
+                elif self.quit_prompt:
+                    # Any other key cancels quit prompt.
+                    self.quit_prompt = False
                 if event.key == pygame.K_LEFT and self.direction != Direction.RIGHT:
                     self.direction = Direction.LEFT
                 elif event.key == pygame.K_RIGHT and self.direction != Direction.LEFT:
@@ -258,19 +271,17 @@ class SnakeGame:
                     self.direction = Direction.DOWN
                 elif event.key == pygame.K_SPACE:
                     self.reset()
+
+        if self.quit_prompt:
+            self._update_ui()
+            self.clock.tick(SPEED)
+            return False, self.score
         
         # 2. Move snake
         self._move(self.direction)
         self.snake.insert(0, self.head)
         
-        # 3. Check if game over
-        game_over = False
-        if self._is_collision():
-            game_over = True
-            self._update_highscore()
-            return game_over, self.score
-            
-        # 4. Check if food eaten and place new food or just move
+        # 3. Check if food eaten and place new food or just move
         food_eaten = False
         for food in self.food_items:
             if self.head == food:
@@ -280,7 +291,19 @@ class SnakeGame:
                 # Add a new food item to maintain NUM_FOOD_ITEMS
                 self._add_single_food()
                 break
-        
+
+        # 4. Check if game over (avoid false collision with tail if it will move)
+        if self.mode == GameMode.CLASSIC:
+            if (self.head.x > WINDOW_WIDTH - BLOCK_SIZE or self.head.x < 0 or
+                    self.head.y > WINDOW_HEIGHT - BLOCK_SIZE or self.head.y < 0):
+                self._update_highscore()
+                return True, self.score
+
+        body_to_check = self.snake[1:] if food_eaten else self.snake[1:-1]
+        if self.head in body_to_check:
+            self._update_highscore()
+            return True, self.score
+
         if not food_eaten:
             self.snake.pop()
         
@@ -288,7 +311,7 @@ class SnakeGame:
         self._update_ui()
         self.clock.tick(SPEED)
         
-        return game_over, self.score
+        return False, self.score
     
     def _add_single_food(self):
         """
@@ -394,6 +417,11 @@ class SnakeGame:
         highscore = self.get_highscore()
         highscore_text = font_small.render(f"High Score: {highscore}", True, YELLOW)
         self.display.blit(highscore_text, [10, 45])
+
+        if self.quit_prompt:
+            prompt_text = font_small.render("Press ESC again to quit, any other key to continue", True, LIGHT_GRAY)
+            prompt_rect = prompt_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT - 20))
+            self.display.blit(prompt_text, prompt_rect)
         
         pygame.display.flip()
         
@@ -449,8 +477,11 @@ def show_menu(display):
         >>> mode = show_menu(display)
         >>> print(f"Selected mode: {mode.name}")
     """
+    if not pygame.get_init():
+        pygame.init()
     clock = pygame.time.Clock()
     selected = 0  # 0 for Classic, 1 for Fun
+    highscores = load_highscores()
     
     # Menu options
     options = [
@@ -472,13 +503,28 @@ def show_menu(display):
         instruction = font_small.render("Use UP/DOWN arrows to select, ENTER to start", True, WHITE)
         instruction_rect = instruction.get_rect(center=(WINDOW_WIDTH // 2, 140))
         display.blit(instruction, instruction_rect)
+
+        # High scores
+        font_scores = pygame.font.Font(None, 24)
+        scores_title = font_scores.render("High Scores", True, YELLOW)
+        scores_title_rect = scores_title.get_rect(center=(WINDOW_WIDTH // 2, 175))
+        display.blit(scores_title, scores_title_rect)
+
+        classic_score = highscores.get('classic', 0)
+        fun_score = highscores.get('fun', 0)
+        classic_text = font_scores.render(f"Classic: {classic_score}", True, LIGHT_GRAY)
+        fun_text = font_scores.render(f"Fun: {fun_score}", True, LIGHT_GRAY)
+        display.blit(classic_text, (WINDOW_WIDTH // 2 - 80, 195))
+        display.blit(fun_text, (WINDOW_WIDTH // 2 - 80, 215))
         
         # Menu options
         font_option = pygame.font.Font(None, 36)
         font_desc = pygame.font.Font(None, 20)
         
+        menu_start_y = 270
+        menu_gap = 110
         for i, (option, description) in enumerate(options):
-            y_pos = 220 + i * 100
+            y_pos = menu_start_y + i * menu_gap
             
             # Highlight selected option
             if i == selected:
@@ -527,6 +573,8 @@ def main():
     
     The game loop continues until the user quits the application.
     """
+    if not pygame.get_init():
+        pygame.init()
     display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption('Snake Game')
     

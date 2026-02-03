@@ -507,22 +507,24 @@ def show_menu(display):
         # High scores
         font_scores = pygame.font.Font(None, 24)
         scores_title = font_scores.render("High Scores", True, YELLOW)
-        scores_title_rect = scores_title.get_rect(center=(WINDOW_WIDTH // 2, 170))
+        scores_title_rect = scores_title.get_rect(center=(WINDOW_WIDTH // 2, 175))
         display.blit(scores_title, scores_title_rect)
 
         classic_score = highscores.get('classic', 0)
         fun_score = highscores.get('fun', 0)
         classic_text = font_scores.render(f"Classic: {classic_score}", True, LIGHT_GRAY)
         fun_text = font_scores.render(f"Fun: {fun_score}", True, LIGHT_GRAY)
-        display.blit(classic_text, (WINDOW_WIDTH // 2 - 80, 190))
-        display.blit(fun_text, (WINDOW_WIDTH // 2 - 80, 210))
+        display.blit(classic_text, (WINDOW_WIDTH // 2 - 80, 195))
+        display.blit(fun_text, (WINDOW_WIDTH // 2 - 80, 215))
         
         # Menu options
         font_option = pygame.font.Font(None, 36)
         font_desc = pygame.font.Font(None, 20)
         
+        menu_start_y = 270
+        menu_gap = 110
         for i, (option, description) in enumerate(options):
-            y_pos = 220 + i * 100
+            y_pos = menu_start_y + i * menu_gap
             
             # Highlight selected option
             if i == selected:

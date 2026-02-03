@@ -295,7 +295,7 @@ class SnakeGame:
         self._update_ui()
         self.clock.tick(SPEED)
         
-        return game_over, self.score
+        return False, self.score
     
     def _add_single_food(self):
         """

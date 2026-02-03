@@ -553,6 +553,9 @@ def show_menu(display):
                     selected = (selected + 1) % 2
                 elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                     return GameMode.CLASSIC if selected == 0 else GameMode.FUN
+                elif event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    quit()
         
         clock.tick(30)
 

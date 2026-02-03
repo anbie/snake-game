@@ -2,6 +2,10 @@ import unittest
 import pygame
 import os
 from unittest.mock import Mock, patch, MagicMock
+
+# Ensure tests don't touch real user high scores.
+os.environ.setdefault('SNAKE_HIGHSCORE_FILE', 'test_highscores.json')
+
 from snake_game import SnakeGame, Direction, Point, GameMode, BLOCK_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, HIGHSCORE_FILE, NUM_FOOD_ITEMS
 
 

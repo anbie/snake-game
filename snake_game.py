@@ -30,15 +30,13 @@ import os
 from enum import Enum
 from collections import namedtuple
 
-pygame.init()
-
 # Game constants
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 480
 BLOCK_SIZE = 20
 SPEED = 10
 NUM_FOOD_ITEMS = 20  # Number of food items on the board
-HIGHSCORE_FILE = 'highscores.json'
+HIGHSCORE_FILE = os.environ.get('SNAKE_HIGHSCORE_FILE', 'highscores.json')
 
 # Colors
 WHITE = (255, 255, 255)
@@ -170,6 +168,8 @@ class SnakeGame:
         :param mode: The game mode to use, defaults to GameMode.CLASSIC
         :type mode: GameMode, optional
         """
+        if not pygame.get_init():
+            pygame.init()
         self.display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption('Snake Game')
         self.clock = pygame.time.Clock()
@@ -213,18 +213,20 @@ class SnakeGame:
         (not on the snake or other food). Makes up to 100 attempts per food item.
         """
         self.food_items = []
-        attempts = 0
         max_attempts = 100
-        
-        while len(self.food_items) < NUM_FOOD_ITEMS and attempts < max_attempts:
-            x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
-            y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
-            new_food = Point(x, y)
-            
-            # Check if position is valid (not on snake or other food)
-            if new_food not in self.snake and new_food not in self.food_items:
-                self.food_items.append(new_food)
-            attempts += 1
+
+        for _ in range(NUM_FOOD_ITEMS):
+            attempts = 0
+            while attempts < max_attempts:
+                x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
+                y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
+                new_food = Point(x, y)
+
+                # Check if position is valid (not on snake or other food)
+                if new_food not in self.snake and new_food not in self.food_items:
+                    self.food_items.append(new_food)
+                    break
+                attempts += 1
             
     def play_step(self):
         """
@@ -263,14 +265,7 @@ class SnakeGame:
         self._move(self.direction)
         self.snake.insert(0, self.head)
         
-        # 3. Check if game over
-        game_over = False
-        if self._is_collision():
-            game_over = True
-            self._update_highscore()
-            return game_over, self.score
-            
-        # 4. Check if food eaten and place new food or just move
+        # 3. Check if food eaten and place new food or just move
         food_eaten = False
         for food in self.food_items:
             if self.head == food:
@@ -280,7 +275,19 @@ class SnakeGame:
                 # Add a new food item to maintain NUM_FOOD_ITEMS
                 self._add_single_food()
                 break
-        
+
+        # 4. Check if game over (avoid false collision with tail if it will move)
+        if self.mode == GameMode.CLASSIC:
+            if (self.head.x > WINDOW_WIDTH - BLOCK_SIZE or self.head.x < 0 or
+                    self.head.y > WINDOW_HEIGHT - BLOCK_SIZE or self.head.y < 0):
+                self._update_highscore()
+                return True, self.score
+
+        body_to_check = self.snake[1:] if food_eaten else self.snake[1:-1]
+        if self.head in body_to_check:
+            self._update_highscore()
+            return True, self.score
+
         if not food_eaten:
             self.snake.pop()
         
@@ -449,6 +456,8 @@ def show_menu(display):
         >>> mode = show_menu(display)
         >>> print(f"Selected mode: {mode.name}")
     """
+    if not pygame.get_init():
+        pygame.init()
     clock = pygame.time.Clock()
     selected = 0  # 0 for Classic, 1 for Fun
     
@@ -527,6 +536,8 @@ def main():
     
     The game loop continues until the user quits the application.
     """
+    if not pygame.get_init():
+        pygame.init()
     display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption('Snake Game')
     

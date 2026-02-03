@@ -30,6 +30,9 @@ import os
 from enum import Enum
 from collections import namedtuple
 
+# Initialize pygame once at module level
+pygame.init()
+
 # Game constants
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 480
@@ -168,8 +171,6 @@ class SnakeGame:
         :param mode: The game mode to use, defaults to GameMode.CLASSIC
         :type mode: GameMode, optional
         """
-        if not pygame.get_init():
-            pygame.init()
         self.display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption('Snake Game')
         self.clock = pygame.time.Clock()
@@ -271,11 +272,6 @@ class SnakeGame:
                     self.direction = Direction.DOWN
                 elif event.key == pygame.K_SPACE:
                     self.reset()
-
-        if self.quit_prompt:
-            self._update_ui()
-            self.clock.tick(SPEED)
-            return False, self.score
         
         # 2. Move snake
         self._move(self.direction)
@@ -477,8 +473,6 @@ def show_menu(display):
         >>> mode = show_menu(display)
         >>> print(f"Selected mode: {mode.name}")
     """
-    if not pygame.get_init():
-        pygame.init()
     clock = pygame.time.Clock()
     selected = 0  # 0 for Classic, 1 for Fun
     highscores = load_highscores()
@@ -573,8 +567,6 @@ def main():
     
     The game loop continues until the user quits the application.
     """
-    if not pygame.get_init():
-        pygame.init()
     display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption('Snake Game')
     

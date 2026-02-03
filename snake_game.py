@@ -175,6 +175,7 @@ class SnakeGame:
         self.clock = pygame.time.Clock()
         self.mode = mode
         self.highscores = load_highscores()
+        self.quit_prompt = False
         self.reset()
         
     def reset(self):
@@ -192,6 +193,7 @@ class SnakeGame:
             Point(self.head.x - (2 * BLOCK_SIZE), self.head.y)
         ]
         self.score = 0
+        self.quit_prompt = False
         self.food_items = []
         self._place_food()
         
@@ -250,6 +252,15 @@ class SnakeGame:
                 pygame.quit()
                 quit()
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    if self.quit_prompt:
+                        pygame.quit()
+                        quit()
+                    self.quit_prompt = True
+                    continue
+                elif self.quit_prompt:
+                    # Any other key cancels quit prompt.
+                    self.quit_prompt = False
                 if event.key == pygame.K_LEFT and self.direction != Direction.RIGHT:
                     self.direction = Direction.LEFT
                 elif event.key == pygame.K_RIGHT and self.direction != Direction.LEFT:
@@ -260,6 +271,11 @@ class SnakeGame:
                     self.direction = Direction.DOWN
                 elif event.key == pygame.K_SPACE:
                     self.reset()
+
+        if self.quit_prompt:
+            self._update_ui()
+            self.clock.tick(SPEED)
+            return False, self.score
         
         # 2. Move snake
         self._move(self.direction)
@@ -401,6 +417,11 @@ class SnakeGame:
         highscore = self.get_highscore()
         highscore_text = font_small.render(f"High Score: {highscore}", True, YELLOW)
         self.display.blit(highscore_text, [10, 45])
+
+        if self.quit_prompt:
+            prompt_text = font_small.render("Press ESC again to quit, any other key to continue", True, LIGHT_GRAY)
+            prompt_rect = prompt_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT - 20))
+            self.display.blit(prompt_text, prompt_rect)
         
         pygame.display.flip()
         
@@ -460,6 +481,7 @@ def show_menu(display):
         pygame.init()
     clock = pygame.time.Clock()
     selected = 0  # 0 for Classic, 1 for Fun
+    highscores = load_highscores()
     
     # Menu options
     options = [
@@ -481,6 +503,19 @@ def show_menu(display):
         instruction = font_small.render("Use UP/DOWN arrows to select, ENTER to start", True, WHITE)
         instruction_rect = instruction.get_rect(center=(WINDOW_WIDTH // 2, 140))
         display.blit(instruction, instruction_rect)
+
+        # High scores
+        font_scores = pygame.font.Font(None, 24)
+        scores_title = font_scores.render("High Scores", True, YELLOW)
+        scores_title_rect = scores_title.get_rect(center=(WINDOW_WIDTH // 2, 170))
+        display.blit(scores_title, scores_title_rect)
+
+        classic_score = highscores.get('classic', 0)
+        fun_score = highscores.get('fun', 0)
+        classic_text = font_scores.render(f"Classic: {classic_score}", True, LIGHT_GRAY)
+        fun_text = font_scores.render(f"Fun: {fun_score}", True, LIGHT_GRAY)
+        display.blit(classic_text, (WINDOW_WIDTH // 2 - 80, 190))
+        display.blit(fun_text, (WINDOW_WIDTH // 2 - 80, 210))
         
         # Menu options
         font_option = pygame.font.Font(None, 36)

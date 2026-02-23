@@ -544,10 +544,10 @@ def show_menu(display: pygame.Surface) -> Tuple[GameMode, int]:
     num_food_items = DEFAULT_NUM_FOOD_ITEMS
     highscores = load_highscores()
     
-    # Menu options with icons
+    # Menu options with descriptions
     options = [
-        ("🏛️ CLASSIC MODE", "Game ends when hitting walls", "⚡ Challenge yourself!"),
-        ("🎪 FUN MODE", "Snake wraps around walls", "🌀 Endless gameplay!")
+        ("CLASSIC MODE", "Game ends when hitting walls", "Challenge yourself!"),
+        ("FUN MODE", "Snake wraps around walls", "Endless gameplay!")
     ]
     
     while True:
@@ -563,11 +563,11 @@ def show_menu(display: pygame.Surface) -> Tuple[GameMode, int]:
         
         # Title with shadow effect
         font_title = pygame.font.Font(None, 72)
-        title_shadow = font_title.render("🐍 SNAKE GAME 🐍", True, (0, 50, 0))
+        title_shadow = font_title.render("SNAKE GAME", True, (0, 50, 0))
         title_shadow_rect = title_shadow.get_rect(center=(WINDOW_WIDTH // 2 + 3, 48))
         display.blit(title_shadow, title_shadow_rect)
         
-        title = font_title.render("🐍 SNAKE GAME 🐍", True, GREEN)
+        title = font_title.render("SNAKE GAME", True, GREEN)
         title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 45))
         display.blit(title, title_rect)
         
@@ -590,7 +590,7 @@ def show_menu(display: pygame.Surface) -> Tuple[GameMode, int]:
                         (WINDOW_WIDTH // 2 - 160, scores_box_y, 320, scores_box_height), 2)
         
         font_scores_title = pygame.font.Font(None, 28)
-        scores_title = font_scores_title.render("🏆 HIGH SCORES 🏆", True, YELLOW)
+        scores_title = font_scores_title.render("HIGH SCORES", True, YELLOW)
         scores_title_rect = scores_title.get_rect(center=(WINDOW_WIDTH // 2, scores_box_y + 15))
         display.blit(scores_title, scores_title_rect)
         
@@ -609,7 +609,7 @@ def show_menu(display: pygame.Surface) -> Tuple[GameMode, int]:
         # Settings Section
         settings_y = 200
         font_settings = pygame.font.Font(None, 24)
-        settings_title = font_settings.render("⚙️  SETTINGS", True, ORANGE)
+        settings_title = font_settings.render("SETTINGS", True, ORANGE)
         settings_title_rect = settings_title.get_rect(center=(WINDOW_WIDTH // 2, settings_y))
         display.blit(settings_title, settings_title_rect)
         
@@ -621,7 +621,7 @@ def show_menu(display: pygame.Surface) -> Tuple[GameMode, int]:
                         (WINDOW_WIDTH // 2 - 120, food_y - 5, 240, 30), 2)
         
         food_label = font_settings.render("Food Items:", True, ORANGE)
-        food_value = font_settings.render(f"◀  {num_food_items:>2}  ▶", True, YELLOW)
+        food_value = font_settings.render(f"<  {num_food_items:>2}  >", True, YELLOW)
         food_label_rect = food_label.get_rect(center=(WINDOW_WIDTH // 2 - 60, food_y + 10))
         food_value_rect = food_value.get_rect(center=(WINDOW_WIDTH // 2 + 50, food_y + 10))
         display.blit(food_label, food_label_rect)
@@ -683,7 +683,7 @@ def show_menu(display: pygame.Surface) -> Tuple[GameMode, int]:
         # Instructions at bottom
         font_instructions = pygame.font.Font(None, 18)
         instructions = [
-            "↑↓ Select Mode  •  ←→ Adjust Food  •  ENTER Start  •  ESC Quit"
+            "UP/DOWN Select Mode  |  LEFT/RIGHT Adjust Food  |  ENTER Start  |  ESC Quit"
         ]
         inst_y = WINDOW_HEIGHT - 25
         for instruction in instructions:

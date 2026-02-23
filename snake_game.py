@@ -524,7 +524,7 @@ class SnakeGame:
 
 def show_menu(display: pygame.Surface) -> Tuple[GameMode, int]:
     """
-    Display the game mode and settings selection menu.
+    Display the game mode and settings selection menu with enhanced visual design.
     
     Shows a menu where the player can select between Classic and Fun game modes,
     and configure the number of food items using arrow keys and Enter.
@@ -544,76 +544,152 @@ def show_menu(display: pygame.Surface) -> Tuple[GameMode, int]:
     num_food_items = DEFAULT_NUM_FOOD_ITEMS
     highscores = load_highscores()
     
-    # Menu options
+    # Menu options with icons
     options = [
-        ("CLASSIC MODE", "Game ends when hitting walls"),
-        ("FUN MODE", "Snake wraps around walls")
+        ("🏛️ CLASSIC MODE", "Game ends when hitting walls", "⚡ Challenge yourself!"),
+        ("🎪 FUN MODE", "Snake wraps around walls", "🌀 Endless gameplay!")
     ]
     
     while True:
+        # Gradient-like background effect
         display.fill(BLACK)
+        for i in range(0, WINDOW_HEIGHT, 20):
+            alpha = int(20 * (1 - i / WINDOW_HEIGHT))
+            pygame.draw.rect(display, (0, alpha, 0), (0, i, WINDOW_WIDTH, 20))
         
-        # Title
-        font_title = pygame.font.Font(None, 64)
-        title = font_title.render("SNAKE GAME", True, GREEN)
-        title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 60))
+        # Decorative border
+        pygame.draw.rect(display, GREEN, (10, 10, WINDOW_WIDTH - 20, WINDOW_HEIGHT - 20), 3)
+        pygame.draw.rect(display, (0, 100, 0), (15, 15, WINDOW_WIDTH - 30, WINDOW_HEIGHT - 30), 1)
+        
+        # Title with shadow effect
+        font_title = pygame.font.Font(None, 72)
+        title_shadow = font_title.render("🐍 SNAKE GAME 🐍", True, (0, 50, 0))
+        title_shadow_rect = title_shadow.get_rect(center=(WINDOW_WIDTH // 2 + 3, 48))
+        display.blit(title_shadow, title_shadow_rect)
+        
+        title = font_title.render("🐍 SNAKE GAME 🐍", True, GREEN)
+        title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 45))
         display.blit(title, title_rect)
         
-        # Instructions
-        font_small = pygame.font.Font(None, 20)
-        instruction = font_small.render(
-            "UP/DOWN: Select mode | LEFT/RIGHT: Adjust food | ENTER: Start",
-            True, WHITE
-        )
-        instruction_rect = instruction.get_rect(center=(WINDOW_WIDTH // 2, 120))
-        display.blit(instruction, instruction_rect)
-
-        # High scores
-        font_scores = pygame.font.Font(None, 24)
-        scores_title = font_scores.render("High Scores", True, YELLOW)
-        scores_title_rect = scores_title.get_rect(center=(WINDOW_WIDTH // 2, 150))
+        # Subtitle
+        font_subtitle = pygame.font.Font(None, 20)
+        subtitle = font_subtitle.render("Classic Arcade Action", True, LIGHT_GRAY)
+        subtitle_rect = subtitle.get_rect(center=(WINDOW_WIDTH // 2, 85))
+        display.blit(subtitle, subtitle_rect)
+        
+        # Divider line
+        pygame.draw.line(display, GREEN, (WINDOW_WIDTH // 2 - 150, 100),
+                        (WINDOW_WIDTH // 2 + 150, 100), 2)
+        
+        # High Scores Section with box
+        scores_box_y = 115
+        scores_box_height = 70
+        pygame.draw.rect(display, (20, 20, 20),
+                        (WINDOW_WIDTH // 2 - 160, scores_box_y, 320, scores_box_height))
+        pygame.draw.rect(display, YELLOW,
+                        (WINDOW_WIDTH // 2 - 160, scores_box_y, 320, scores_box_height), 2)
+        
+        font_scores_title = pygame.font.Font(None, 28)
+        scores_title = font_scores_title.render("🏆 HIGH SCORES 🏆", True, YELLOW)
+        scores_title_rect = scores_title.get_rect(center=(WINDOW_WIDTH // 2, scores_box_y + 15))
         display.blit(scores_title, scores_title_rect)
-
+        
+        font_scores = pygame.font.Font(None, 22)
         classic_score = highscores.get('classic', 0)
         fun_score = highscores.get('fun', 0)
-        classic_text = font_scores.render(f"Classic: {classic_score}", True, LIGHT_GRAY)
-        fun_text = font_scores.render(f"Fun: {fun_score}", True, LIGHT_GRAY)
-        display.blit(classic_text, (WINDOW_WIDTH // 2 - 80, 170))
-        display.blit(fun_text, (WINDOW_WIDTH // 2 - 80, 190))
         
-        # Food items setting
-        food_label = font_scores.render("Food Items:", True, ORANGE)
-        food_value = font_scores.render(f"< {num_food_items} >", True, YELLOW)
-        display.blit(food_label, (WINDOW_WIDTH // 2 - 100, 220))
-        display.blit(food_value, (WINDOW_WIDTH // 2 + 10, 220))
+        # Centered high scores
+        classic_text = font_scores.render(f"Classic: {classic_score:>3}", True, WHITE)
+        fun_text = font_scores.render(f"Fun: {fun_score:>3}", True, WHITE)
+        classic_rect = classic_text.get_rect(center=(WINDOW_WIDTH // 2 - 60, scores_box_y + 45))
+        fun_rect = fun_text.get_rect(center=(WINDOW_WIDTH // 2 + 60, scores_box_y + 45))
+        display.blit(classic_text, classic_rect)
+        display.blit(fun_text, fun_rect)
         
-        # Menu options
-        font_option = pygame.font.Font(None, 36)
+        # Settings Section
+        settings_y = 200
+        font_settings = pygame.font.Font(None, 24)
+        settings_title = font_settings.render("⚙️  SETTINGS", True, ORANGE)
+        settings_title_rect = settings_title.get_rect(center=(WINDOW_WIDTH // 2, settings_y))
+        display.blit(settings_title, settings_title_rect)
+        
+        # Food items with better visual
+        food_y = settings_y + 30
+        pygame.draw.rect(display, (30, 30, 30),
+                        (WINDOW_WIDTH // 2 - 120, food_y - 5, 240, 30))
+        pygame.draw.rect(display, ORANGE,
+                        (WINDOW_WIDTH // 2 - 120, food_y - 5, 240, 30), 2)
+        
+        food_label = font_settings.render("Food Items:", True, ORANGE)
+        food_value = font_settings.render(f"◀  {num_food_items:>2}  ▶", True, YELLOW)
+        food_label_rect = food_label.get_rect(center=(WINDOW_WIDTH // 2 - 60, food_y + 10))
+        food_value_rect = food_value.get_rect(center=(WINDOW_WIDTH // 2 + 50, food_y + 10))
+        display.blit(food_label, food_label_rect)
+        display.blit(food_value, food_value_rect)
+        
+        # Game Mode Selection
+        font_mode_title = pygame.font.Font(None, 26)
+        mode_title = font_mode_title.render("SELECT GAME MODE", True, WHITE)
+        mode_title_rect = mode_title.get_rect(center=(WINDOW_WIDTH // 2, 270))
+        display.blit(mode_title, mode_title_rect)
+        
+        # Menu options with enhanced styling
+        font_option = pygame.font.Font(None, 32)
         font_desc = pygame.font.Font(None, 18)
+        font_extra = pygame.font.Font(None, 16)
         
-        menu_start_y = 270
-        menu_gap = 90
-        for i, (option, description) in enumerate(options):
+        menu_start_y = 305
+        menu_gap = 75
+        
+        for i, (option, description, extra) in enumerate(options):
             y_pos = menu_start_y + i * menu_gap
             
-            # Highlight selected option
+            # Draw option box
+            box_width = 380
+            box_height = 65
+            box_x = WINDOW_WIDTH // 2 - box_width // 2
+            box_y = y_pos - 8
+            
             if i == selected:
+                # Selected option - highlighted
+                pygame.draw.rect(display, (50, 50, 0), (box_x, box_y, box_width, box_height))
+                pygame.draw.rect(display, YELLOW, (box_x, box_y, box_width, box_height), 3)
+                # Glow effect
+                pygame.draw.rect(display, (100, 100, 0), (box_x - 2, box_y - 2, box_width + 4, box_height + 4), 1)
                 color = YELLOW
-                # Draw selection box
-                pygame.draw.rect(display, GRAY,
-                               (WINDOW_WIDTH // 2 - 180, y_pos - 10, 360, 60), 2)
+                desc_color = WHITE
             else:
+                # Unselected option
+                pygame.draw.rect(display, (20, 20, 20), (box_x, box_y, box_width, box_height))
+                pygame.draw.rect(display, GRAY, (box_x, box_y, box_width, box_height), 2)
                 color = WHITE
+                desc_color = LIGHT_GRAY
             
             # Option text
             option_text = font_option.render(option, True, color)
-            option_rect = option_text.get_rect(center=(WINDOW_WIDTH // 2, y_pos + 5))
+            option_rect = option_text.get_rect(center=(WINDOW_WIDTH // 2, y_pos + 8))
             display.blit(option_text, option_rect)
             
             # Description text
-            desc_text = font_desc.render(description, True, LIGHT_GRAY)
-            desc_rect = desc_text.get_rect(center=(WINDOW_WIDTH // 2, y_pos + 30))
+            desc_text = font_desc.render(description, True, desc_color)
+            desc_rect = desc_text.get_rect(center=(WINDOW_WIDTH // 2, y_pos + 32))
             display.blit(desc_text, desc_rect)
+            
+            # Extra info
+            extra_text = font_extra.render(extra, True, desc_color)
+            extra_rect = extra_text.get_rect(center=(WINDOW_WIDTH // 2, y_pos + 48))
+            display.blit(extra_text, extra_rect)
+        
+        # Instructions at bottom
+        font_instructions = pygame.font.Font(None, 18)
+        instructions = [
+            "↑↓ Select Mode  •  ←→ Adjust Food  •  ENTER Start  •  ESC Quit"
+        ]
+        inst_y = WINDOW_HEIGHT - 25
+        for instruction in instructions:
+            inst_text = font_instructions.render(instruction, True, LIGHT_GRAY)
+            inst_rect = inst_text.get_rect(center=(WINDOW_WIDTH // 2, inst_y))
+            display.blit(inst_text, inst_rect)
         
         pygame.display.flip()
         

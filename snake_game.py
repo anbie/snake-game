@@ -7,17 +7,18 @@ Classic mode (game ends on wall collision) and Fun mode (snake wraps around wall
 
 The game features:
     - Two game modes (Classic and Fun)
-    - Multiple food items on the board
+    - Configurable number of food items on the board
     - High score tracking
     - Colorful graphics
     - Menu system for mode selection
+    - Pause functionality
 
 Constants:
     WINDOW_WIDTH (int): Width of the game window in pixels
     WINDOW_HEIGHT (int): Height of the game window in pixels
     BLOCK_SIZE (int): Size of each game block in pixels
     SPEED (int): Game speed (frames per second)
-    NUM_FOOD_ITEMS (int): Number of food items on the board
+    DEFAULT_NUM_FOOD_ITEMS (int): Default number of food items on the board
     HIGHSCORE_FILE (str): Filename for storing high scores
 
 .. moduleauthor:: Snake Game Developer
@@ -27,8 +28,14 @@ import pygame
 import random
 import json
 import os
+import logging
 from enum import Enum
 from collections import namedtuple
+from typing import List, Tuple, Optional
+
+# Configure logging
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 # Initialize pygame once at module level
 pygame.init()
@@ -38,8 +45,19 @@ WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 480
 BLOCK_SIZE = 20
 SPEED = 10
-NUM_FOOD_ITEMS = 20  # Number of food items on the board
+DEFAULT_NUM_FOOD_ITEMS = 4  # Default number of food items on the board
+MIN_FOOD_ITEMS = 1
+MAX_FOOD_ITEMS = 50
 HIGHSCORE_FILE = os.environ.get('SNAKE_HIGHSCORE_FILE', 'highscores.json')
+
+# Visual constants
+SNAKE_INNER_OFFSET = 4
+SNAKE_INNER_SIZE = 12
+MAX_FOOD_PLACEMENT_ATTEMPTS = 100
+
+# Validate constants
+assert WINDOW_WIDTH % BLOCK_SIZE == 0, "WINDOW_WIDTH must be divisible by BLOCK_SIZE"
+assert WINDOW_HEIGHT % BLOCK_SIZE == 0, "WINDOW_HEIGHT must be divisible by BLOCK_SIZE"
 
 # Colors
 WHITE = (255, 255, 255)
@@ -94,7 +112,7 @@ Attributes:
 """
 
 
-def load_highscores():
+def load_highscores() -> dict:
     """
     Load high scores from the JSON file.
     
@@ -113,16 +131,17 @@ def load_highscores():
         try:
             with open(HIGHSCORE_FILE, 'r') as f:
                 return json.load(f)
-        except (json.JSONDecodeError, IOError):
+        except (json.JSONDecodeError, IOError) as e:
+            logger.warning(f"Failed to load highscores: {e}")
             return {'classic': 0, 'fun': 0}
     return {'classic': 0, 'fun': 0}
 
 
-def save_highscores(highscores):
+def save_highscores(highscores: dict) -> None:
     """
     Save high scores to the JSON file.
     
-    Writes the high scores dictionary to HIGHSCORE_FILE. Silently fails
+    Writes the high scores dictionary to HIGHSCORE_FILE. Logs warning
     if the file cannot be written.
     
     :param highscores: Dictionary containing high scores for both game modes
@@ -134,8 +153,8 @@ def save_highscores(highscores):
     try:
         with open(HIGHSCORE_FILE, 'w') as f:
             json.dump(highscores, f)
-    except IOError:
-        pass  # Silently fail if can't save
+    except IOError as e:
+        logger.warning(f"Failed to save highscores: {e}")
 
 
 class SnakeGame:
@@ -164,22 +183,26 @@ class SnakeGame:
         >>> game_over, score = game.play_step()
     """
     
-    def __init__(self, mode=GameMode.CLASSIC):
+    def __init__(self, mode: GameMode = GameMode.CLASSIC, num_food_items: int = DEFAULT_NUM_FOOD_ITEMS):
         """
         Initialize the Snake Game.
         
         :param mode: The game mode to use, defaults to GameMode.CLASSIC
         :type mode: GameMode, optional
+        :param num_food_items: Number of food items on the board, defaults to DEFAULT_NUM_FOOD_ITEMS
+        :type num_food_items: int, optional
         """
         self.display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption('Snake Game')
         self.clock = pygame.time.Clock()
         self.mode = mode
+        self.num_food_items = max(MIN_FOOD_ITEMS, min(num_food_items, MAX_FOOD_ITEMS))
         self.highscores = load_highscores()
         self.quit_prompt = False
+        self.paused = False
         self.reset()
         
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the game to initial state.
         
@@ -195,10 +218,11 @@ class SnakeGame:
         ]
         self.score = 0
         self.quit_prompt = False
+        self.paused = False
         self.food_items = []
         self._place_food()
         
-    def set_mode(self, mode):
+    def set_mode(self, mode: GameMode) -> None:
         """
         Set the game mode and reset the game.
         
@@ -207,31 +231,40 @@ class SnakeGame:
         """
         self.mode = mode
         self.reset()
+    
+    def _generate_valid_food_position(self) -> Point:
+        """
+        Generate a valid food position not on snake or existing food.
         
-    def _place_food(self):
+        :return: A valid Point for food placement
+        :rtype: Point
+        """
+        for _ in range(MAX_FOOD_PLACEMENT_ATTEMPTS):
+            x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
+            y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
+            new_food = Point(x, y)
+            
+            # Check if position is valid (not on snake or other food)
+            if new_food not in self.snake and new_food not in self.food_items:
+                return new_food
+        
+        # Fallback: return a position even if not ideal
+        x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
+        y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
+        return Point(x, y)
+        
+    def _place_food(self) -> None:
         """
         Place multiple food items on the board.
         
-        Attempts to place NUM_FOOD_ITEMS food items in valid positions
-        (not on the snake or other food). Makes up to 100 attempts per food item.
+        Places self.num_food_items food items in valid positions
+        (not on the snake or other food).
         """
         self.food_items = []
-        max_attempts = 100
-
-        for _ in range(NUM_FOOD_ITEMS):
-            attempts = 0
-            while attempts < max_attempts:
-                x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
-                y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
-                new_food = Point(x, y)
-
-                # Check if position is valid (not on snake or other food)
-                if new_food not in self.snake and new_food not in self.food_items:
-                    self.food_items.append(new_food)
-                    break
-                attempts += 1
+        for _ in range(self.num_food_items):
+            self.food_items.append(self._generate_valid_food_position())
             
-    def play_step(self):
+    def play_step(self) -> Tuple[bool, int]:
         """
         Execute one step of the game loop.
         
@@ -253,25 +286,34 @@ class SnakeGame:
                 pygame.quit()
                 quit()
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    if self.quit_prompt:
-                        pygame.quit()
-                        quit()
-                    self.quit_prompt = True
+                # Handle quit prompt
+                if self._handle_quit_prompt(event):
+                    pygame.quit()
+                    quit()
+                
+                # Handle pause
+                if event.key == pygame.K_p:
+                    self.paused = not self.paused
                     continue
-                elif self.quit_prompt:
-                    # Any other key cancels quit prompt.
-                    self.quit_prompt = False
-                if event.key == pygame.K_LEFT and self.direction != Direction.RIGHT:
-                    self.direction = Direction.LEFT
-                elif event.key == pygame.K_RIGHT and self.direction != Direction.LEFT:
-                    self.direction = Direction.RIGHT
-                elif event.key == pygame.K_UP and self.direction != Direction.DOWN:
-                    self.direction = Direction.UP
-                elif event.key == pygame.K_DOWN and self.direction != Direction.UP:
-                    self.direction = Direction.DOWN
-                elif event.key == pygame.K_SPACE:
-                    self.reset()
+                
+                # Handle direction changes (only if not paused)
+                if not self.paused:
+                    if event.key == pygame.K_LEFT and self.direction != Direction.RIGHT:
+                        self.direction = Direction.LEFT
+                    elif event.key == pygame.K_RIGHT and self.direction != Direction.LEFT:
+                        self.direction = Direction.RIGHT
+                    elif event.key == pygame.K_UP and self.direction != Direction.DOWN:
+                        self.direction = Direction.UP
+                    elif event.key == pygame.K_DOWN and self.direction != Direction.UP:
+                        self.direction = Direction.DOWN
+                    elif event.key == pygame.K_SPACE:
+                        self.reset()
+        
+        # If paused, just update UI and return
+        if self.paused:
+            self._update_ui()
+            self.clock.tick(SPEED)
+            return False, self.score
         
         # 2. Move snake
         self._move(self.direction)
@@ -284,7 +326,7 @@ class SnakeGame:
                 self.score += 1
                 food_eaten = True
                 self.food_items.remove(food)
-                # Add a new food item to maintain NUM_FOOD_ITEMS
+                # Add a new food item to maintain num_food_items
                 self._add_single_food()
                 break
 
@@ -309,28 +351,33 @@ class SnakeGame:
         
         return False, self.score
     
-    def _add_single_food(self):
+    def _handle_quit_prompt(self, event: pygame.event.Event) -> bool:
+        """
+        Handle quit prompt logic.
+        
+        :param event: The pygame event to process
+        :type event: pygame.event.Event
+        :return: True if should quit, False otherwise
+        :rtype: bool
+        """
+        if event.key == pygame.K_ESCAPE:
+            if self.quit_prompt:
+                return True
+            self.quit_prompt = True
+            return False
+        elif self.quit_prompt:
+            self.quit_prompt = False
+        return False
+    
+    def _add_single_food(self) -> None:
         """
         Add a single food item to the board.
         
-        Attempts to place one food item in a valid position (not on the snake
-        or other food). Makes up to 100 attempts.
+        Uses the refactored _generate_valid_food_position method.
         """
-        attempts = 0
-        max_attempts = 100
-        
-        while attempts < max_attempts:
-            x = random.randint(0, (WINDOW_WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
-            y = random.randint(0, (WINDOW_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
-            new_food = Point(x, y)
-            
-            # Check if position is valid (not on snake or other food)
-            if new_food not in self.snake and new_food not in self.food_items:
-                self.food_items.append(new_food)
-                break
-            attempts += 1
+        self.food_items.append(self._generate_valid_food_position())
     
-    def _update_highscore(self):
+    def _update_highscore(self) -> None:
         """
         Update the high score if the current score is higher.
         
@@ -342,7 +389,7 @@ class SnakeGame:
             self.highscores[mode_key] = self.score
             save_highscores(self.highscores)
     
-    def get_highscore(self):
+    def get_highscore(self) -> int:
         """
         Get the high score for the current game mode.
         
@@ -352,7 +399,7 @@ class SnakeGame:
         mode_key = 'classic' if self.mode == GameMode.CLASSIC else 'fun'
         return self.highscores[mode_key]
     
-    def _is_collision(self, pt=None):
+    def _is_collision(self, pt: Optional[Point] = None) -> bool:
         """
         Check if there is a collision at the given point.
         
@@ -379,12 +426,12 @@ class SnakeGame:
             return True
         return False
         
-    def _update_ui(self):
+    def _update_ui(self) -> None:
         """
         Update the game display.
         
-        Renders the snake, food items, score, high score, and game mode indicator
-        on the display surface.
+        Renders the snake, food items, score, high score, game mode indicator,
+        and pause/quit prompts on the display surface.
         """
         self.display.fill(BLACK)
         
@@ -394,15 +441,20 @@ class SnakeGame:
         mode_surface = font_small.render(mode_text, True, GRAY)
         self.display.blit(mode_surface, [WINDOW_WIDTH - 150, 10])
         
-        # Draw snake
+        # Draw snake with inner detail
         for pt in self.snake:
-            pygame.draw.rect(self.display, GREEN, pygame.Rect(pt.x, pt.y, BLOCK_SIZE, BLOCK_SIZE))
-            pygame.draw.rect(self.display, BLUE, pygame.Rect(pt.x + 4, pt.y + 4, 12, 12))
+            pygame.draw.rect(self.display, GREEN,
+                           pygame.Rect(pt.x, pt.y, BLOCK_SIZE, BLOCK_SIZE))
+            pygame.draw.rect(self.display, BLUE,
+                           pygame.Rect(pt.x + SNAKE_INNER_OFFSET,
+                                     pt.y + SNAKE_INNER_OFFSET,
+                                     SNAKE_INNER_SIZE, SNAKE_INNER_SIZE))
             
         # Draw all food items with different colors
         for i, food in enumerate(self.food_items):
             color = FOOD_COLORS[i % len(FOOD_COLORS)]
-            pygame.draw.rect(self.display, color, pygame.Rect(food.x, food.y, BLOCK_SIZE, BLOCK_SIZE))
+            pygame.draw.rect(self.display, color,
+                           pygame.Rect(food.x, food.y, BLOCK_SIZE, BLOCK_SIZE))
         
         # Draw score
         font = pygame.font.Font(None, 36)
@@ -413,15 +465,29 @@ class SnakeGame:
         highscore = self.get_highscore()
         highscore_text = font_small.render(f"High Score: {highscore}", True, YELLOW)
         self.display.blit(highscore_text, [10, 45])
+        
+        # Draw pause indicator
+        if self.paused:
+            pause_text = font.render("PAUSED", True, YELLOW)
+            pause_rect = pause_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
+            self.display.blit(pause_text, pause_rect)
+            
+            resume_text = font_small.render("Press P to resume", True, WHITE)
+            resume_rect = resume_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 40))
+            self.display.blit(resume_text, resume_rect)
 
+        # Draw quit prompt
         if self.quit_prompt:
-            prompt_text = font_small.render("Press ESC again to quit, any other key to continue", True, LIGHT_GRAY)
+            prompt_text = font_small.render(
+                "Press ESC again to quit, any other key to continue",
+                True, LIGHT_GRAY
+            )
             prompt_rect = prompt_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT - 20))
             self.display.blit(prompt_text, prompt_rect)
         
         pygame.display.flip()
         
-    def _move(self, direction):
+    def _move(self, direction: Direction) -> None:
         """
         Move the snake's head in the specified direction.
         
@@ -456,25 +522,26 @@ class SnakeGame:
         self.head = Point(x, y)
 
 
-def show_menu(display):
+def show_menu(display: pygame.Surface) -> Tuple[GameMode, int]:
     """
-    Display the game mode selection menu.
+    Display the game mode and settings selection menu.
     
-    Shows a menu where the player can select between Classic and Fun game modes
-    using arrow keys and Enter. The menu includes descriptions of each mode.
+    Shows a menu where the player can select between Classic and Fun game modes,
+    and configure the number of food items using arrow keys and Enter.
     
     :param display: The pygame display surface to render the menu on
     :type display: pygame.Surface
-    :return: The selected game mode
-    :rtype: GameMode
+    :return: Tuple of (selected game mode, number of food items)
+    :rtype: Tuple[GameMode, int]
     
     Example:
         >>> display = pygame.display.set_mode((640, 480))
-        >>> mode = show_menu(display)
-        >>> print(f"Selected mode: {mode.name}")
+        >>> mode, num_food = show_menu(display)
+        >>> print(f"Selected mode: {mode.name}, Food items: {num_food}")
     """
     clock = pygame.time.Clock()
     selected = 0  # 0 for Classic, 1 for Fun
+    num_food_items = DEFAULT_NUM_FOOD_ITEMS
     highscores = load_highscores()
     
     # Menu options
@@ -489,34 +556,43 @@ def show_menu(display):
         # Title
         font_title = pygame.font.Font(None, 64)
         title = font_title.render("SNAKE GAME", True, GREEN)
-        title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 80))
+        title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 60))
         display.blit(title, title_rect)
         
         # Instructions
-        font_small = pygame.font.Font(None, 24)
-        instruction = font_small.render("Use UP/DOWN arrows to select, ENTER to start", True, WHITE)
-        instruction_rect = instruction.get_rect(center=(WINDOW_WIDTH // 2, 140))
+        font_small = pygame.font.Font(None, 20)
+        instruction = font_small.render(
+            "UP/DOWN: Select mode | LEFT/RIGHT: Adjust food | ENTER: Start",
+            True, WHITE
+        )
+        instruction_rect = instruction.get_rect(center=(WINDOW_WIDTH // 2, 120))
         display.blit(instruction, instruction_rect)
 
         # High scores
         font_scores = pygame.font.Font(None, 24)
         scores_title = font_scores.render("High Scores", True, YELLOW)
-        scores_title_rect = scores_title.get_rect(center=(WINDOW_WIDTH // 2, 175))
+        scores_title_rect = scores_title.get_rect(center=(WINDOW_WIDTH // 2, 150))
         display.blit(scores_title, scores_title_rect)
 
         classic_score = highscores.get('classic', 0)
         fun_score = highscores.get('fun', 0)
         classic_text = font_scores.render(f"Classic: {classic_score}", True, LIGHT_GRAY)
         fun_text = font_scores.render(f"Fun: {fun_score}", True, LIGHT_GRAY)
-        display.blit(classic_text, (WINDOW_WIDTH // 2 - 80, 195))
-        display.blit(fun_text, (WINDOW_WIDTH // 2 - 80, 215))
+        display.blit(classic_text, (WINDOW_WIDTH // 2 - 80, 170))
+        display.blit(fun_text, (WINDOW_WIDTH // 2 - 80, 190))
+        
+        # Food items setting
+        food_label = font_scores.render("Food Items:", True, ORANGE)
+        food_value = font_scores.render(f"< {num_food_items} >", True, YELLOW)
+        display.blit(food_label, (WINDOW_WIDTH // 2 - 100, 220))
+        display.blit(food_value, (WINDOW_WIDTH // 2 + 10, 220))
         
         # Menu options
         font_option = pygame.font.Font(None, 36)
-        font_desc = pygame.font.Font(None, 20)
+        font_desc = pygame.font.Font(None, 18)
         
         menu_start_y = 270
-        menu_gap = 110
+        menu_gap = 90
         for i, (option, description) in enumerate(options):
             y_pos = menu_start_y + i * menu_gap
             
@@ -524,19 +600,19 @@ def show_menu(display):
             if i == selected:
                 color = YELLOW
                 # Draw selection box
-                pygame.draw.rect(display, GRAY, 
-                               (WINDOW_WIDTH // 2 - 180, y_pos - 10, 360, 70), 2)
+                pygame.draw.rect(display, GRAY,
+                               (WINDOW_WIDTH // 2 - 180, y_pos - 10, 360, 60), 2)
             else:
                 color = WHITE
             
             # Option text
             option_text = font_option.render(option, True, color)
-            option_rect = option_text.get_rect(center=(WINDOW_WIDTH // 2, y_pos + 10))
+            option_rect = option_text.get_rect(center=(WINDOW_WIDTH // 2, y_pos + 5))
             display.blit(option_text, option_rect)
             
             # Description text
             desc_text = font_desc.render(description, True, LIGHT_GRAY)
-            desc_rect = desc_text.get_rect(center=(WINDOW_WIDTH // 2, y_pos + 40))
+            desc_rect = desc_text.get_rect(center=(WINDOW_WIDTH // 2, y_pos + 30))
             display.blit(desc_text, desc_rect)
         
         pygame.display.flip()
@@ -551,8 +627,13 @@ def show_menu(display):
                     selected = (selected - 1) % 2
                 elif event.key == pygame.K_DOWN:
                     selected = (selected + 1) % 2
+                elif event.key == pygame.K_LEFT:
+                    num_food_items = max(MIN_FOOD_ITEMS, num_food_items - 1)
+                elif event.key == pygame.K_RIGHT:
+                    num_food_items = min(MAX_FOOD_ITEMS, num_food_items + 1)
                 elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
-                    return GameMode.CLASSIC if selected == 0 else GameMode.FUN
+                    mode = GameMode.CLASSIC if selected == 0 else GameMode.FUN
+                    return mode, num_food_items
                 elif event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     quit()
@@ -560,24 +641,24 @@ def show_menu(display):
         clock.tick(30)
 
 
-def main():
+def main() -> None:
     """
     Main entry point for the Snake Game.
     
-    Initializes the game, displays the menu for mode selection, and runs
-    the main game loop. Handles game over state and allows restarting or
-    returning to the menu.
+    Initializes the game, displays the menu for mode and settings selection,
+    and runs the main game loop. Handles game over state and allows restarting
+    or returning to the menu.
     
     The game loop continues until the user quits the application.
     """
     display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption('Snake Game')
     
-    # Show menu and get selected mode
-    mode = show_menu(display)
+    # Show menu and get selected mode and food items
+    mode, num_food_items = show_menu(display)
     
-    # Create game with selected mode
-    game = SnakeGame(mode)
+    # Create game with selected mode and food items
+    game = SnakeGame(mode, num_food_items)
     
     # Game loop
     while True:
@@ -615,8 +696,10 @@ def main():
                             waiting = False
                         elif event.key == pygame.K_ESCAPE:
                             # Return to menu
-                            mode = show_menu(display)
-                            game.set_mode(mode)
+                            mode, num_food_items = show_menu(display)
+                            game.mode = mode
+                            game.num_food_items = num_food_items
+                            game.reset()
                             waiting = False
 
 

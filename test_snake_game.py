@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch, MagicMock
 # Ensure tests don't touch real user high scores.
 os.environ.setdefault('SNAKE_HIGHSCORE_FILE', 'test_highscores.json')
 
-from snake_game import SnakeGame, Direction, Point, GameMode, BLOCK_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, HIGHSCORE_FILE, NUM_FOOD_ITEMS
+from snake_game import SnakeGame, Direction, Point, GameMode, BLOCK_SIZE, WINDOW_WIDTH, WINDOW_HEIGHT, HIGHSCORE_FILE, DEFAULT_NUM_FOOD_ITEMS
 
 
 class TestSnakeGameClassicMode(unittest.TestCase):
@@ -29,7 +29,7 @@ class TestSnakeGameClassicMode(unittest.TestCase):
         self.assertEqual(self.game.direction, Direction.RIGHT)
         self.assertEqual(len(self.game.snake), 3)
         self.assertEqual(self.game.score, 0)
-        self.assertEqual(len(self.game.food_items), NUM_FOOD_ITEMS)
+        self.assertEqual(len(self.game.food_items), DEFAULT_NUM_FOOD_ITEMS)
         self.assertEqual(self.game.mode, GameMode.CLASSIC)
     
     def test_reset_classic(self):
@@ -46,7 +46,7 @@ class TestSnakeGameClassicMode(unittest.TestCase):
         self.assertEqual(self.game.score, 0)
         self.assertEqual(self.game.direction, Direction.RIGHT)
         self.assertEqual(len(self.game.snake), 3)
-        self.assertEqual(len(self.game.food_items), NUM_FOOD_ITEMS)
+        self.assertEqual(len(self.game.food_items), DEFAULT_NUM_FOOD_ITEMS)
     
     # Test collision with walls in Classic mode
     def test_collision_with_left_wall_classic(self):
@@ -96,7 +96,7 @@ class TestSnakeGameFunMode(unittest.TestCase):
         self.assertEqual(self.game.direction, Direction.RIGHT)
         self.assertEqual(len(self.game.snake), 3)
         self.assertEqual(self.game.score, 0)
-        self.assertEqual(len(self.game.food_items), NUM_FOOD_ITEMS)
+        self.assertEqual(len(self.game.food_items), DEFAULT_NUM_FOOD_ITEMS)
         self.assertEqual(self.game.mode, GameMode.FUN)
     
     # Test wall wrapping in Fun mode
@@ -178,12 +178,12 @@ class TestSnakeGameCommon(unittest.TestCase):
     # Test food placement
     def test_food_placement_count(self):
         """Test that correct number of food items are placed"""
-        self.assertEqual(len(self.game.food_items), NUM_FOOD_ITEMS)
+        self.assertEqual(len(self.game.food_items), DEFAULT_NUM_FOOD_ITEMS)
     
     def test_food_placement_allows_duplicates(self):
         """Test that food placement doesn't require unique positions (colors can repeat)"""
         # Just verify we have the right count, positions don't need to be unique
-        self.assertEqual(len(self.game.food_items), NUM_FOOD_ITEMS)
+        self.assertEqual(len(self.game.food_items), DEFAULT_NUM_FOOD_ITEMS)
     
     def test_food_placement_not_on_snake(self):
         """Test that food is not placed on snake body"""
@@ -389,7 +389,7 @@ class TestSnakeGameCommon(unittest.TestCase):
             self.game.food_items.pop(0)
             self.game._add_single_food()
             
-            self.assertEqual(len(self.game.food_items), NUM_FOOD_ITEMS)
+            self.assertEqual(len(self.game.food_items), DEFAULT_NUM_FOOD_ITEMS)
 
 
 class TestGameConstants(unittest.TestCase):
@@ -426,7 +426,7 @@ class TestShowMenu(unittest.TestCase):
     @patch('snake_game.pygame.event.get')
     def test_menu_returns_classic_on_enter_with_default_selection(self, mock_event_get):
         """Test that menu returns CLASSIC mode when ENTER is pressed with default selection"""
-        from snake_game import show_menu, GameMode
+        from snake_game import show_menu, GameMode, DEFAULT_NUM_FOOD_ITEMS
         
         # Simulate ENTER key press
         mock_event = Mock()
@@ -434,13 +434,14 @@ class TestShowMenu(unittest.TestCase):
         mock_event.key = pygame.K_RETURN
         mock_event_get.return_value = [mock_event]
         
-        result = show_menu(self.display)
-        self.assertEqual(result, GameMode.CLASSIC)
+        mode, num_food = show_menu(self.display)
+        self.assertEqual(mode, GameMode.CLASSIC)
+        self.assertEqual(num_food, DEFAULT_NUM_FOOD_ITEMS)
     
     @patch('snake_game.pygame.event.get')
     def test_menu_returns_classic_on_space_with_default_selection(self, mock_event_get):
         """Test that menu returns CLASSIC mode when SPACE is pressed with default selection"""
-        from snake_game import show_menu, GameMode
+        from snake_game import show_menu, GameMode, DEFAULT_NUM_FOOD_ITEMS
         
         # Simulate SPACE key press
         mock_event = Mock()
@@ -448,8 +449,9 @@ class TestShowMenu(unittest.TestCase):
         mock_event.key = pygame.K_SPACE
         mock_event_get.return_value = [mock_event]
         
-        result = show_menu(self.display)
-        self.assertEqual(result, GameMode.CLASSIC)
+        mode, num_food = show_menu(self.display)
+        self.assertEqual(mode, GameMode.CLASSIC)
+        self.assertEqual(num_food, DEFAULT_NUM_FOOD_ITEMS)
     
     @patch('snake_game.pygame.event.get')
     def test_menu_navigation_down_then_enter(self, mock_event_get):
@@ -468,8 +470,8 @@ class TestShowMenu(unittest.TestCase):
         # First call returns DOWN, second call returns ENTER
         mock_event_get.side_effect = [[down_event], [enter_event]]
         
-        result = show_menu(self.display)
-        self.assertEqual(result, GameMode.FUN)
+        mode, num_food = show_menu(self.display)
+        self.assertEqual(mode, GameMode.FUN)
     
     @patch('snake_game.pygame.event.get')
     def test_menu_navigation_up_wraps_to_fun(self, mock_event_get):
@@ -487,8 +489,8 @@ class TestShowMenu(unittest.TestCase):
         
         mock_event_get.side_effect = [[up_event], [enter_event]]
         
-        result = show_menu(self.display)
-        self.assertEqual(result, GameMode.FUN)
+        mode, num_food = show_menu(self.display)
+        self.assertEqual(mode, GameMode.FUN)
     
     @patch('snake_game.pygame.event.get')
     def test_menu_navigation_down_twice_wraps_to_classic(self, mock_event_get):
@@ -506,8 +508,8 @@ class TestShowMenu(unittest.TestCase):
         
         mock_event_get.side_effect = [[down_event], [down_event], [enter_event]]
         
-        result = show_menu(self.display)
-        self.assertEqual(result, GameMode.CLASSIC)
+        mode, num_food = show_menu(self.display)
+        self.assertEqual(mode, GameMode.CLASSIC)
     
     @patch('snake_game.pygame.event.get')
     @patch('snake_game.pygame.quit')
@@ -529,7 +531,7 @@ class TestShowMenu(unittest.TestCase):
     
     @patch('snake_game.pygame.event.get')
     def test_menu_ignores_other_keys(self, mock_event_get):
-        """Test that menu ignores keys other than UP, DOWN, ENTER, SPACE"""
+        """Test that menu ignores keys other than UP, DOWN, ENTER, SPACE, LEFT, RIGHT"""
         from snake_game import show_menu, GameMode
         
         # Simulate random key then ENTER
@@ -543,9 +545,9 @@ class TestShowMenu(unittest.TestCase):
         
         mock_event_get.side_effect = [[random_key_event], [enter_event]]
         
-        result = show_menu(self.display)
+        mode, num_food = show_menu(self.display)
         # Should still be CLASSIC (default) since random key was ignored
-        self.assertEqual(result, GameMode.CLASSIC)
+        self.assertEqual(mode, GameMode.CLASSIC)
 
 
 class TestMainGameLoop(unittest.TestCase):

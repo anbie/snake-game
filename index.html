@@ -325,8 +325,8 @@
         <div class="main-content">
             <div class="section">
                 <h2>🎮 About the Game</h2>
-                <p>This is a classic snake game implementation created with Python and Pygame. Control the snake to eat food, grow longer, and avoid hitting the walls or yourself! The game features two distinct modes, a high score system, and colorful graphics.</p>
-                <p style="margin-top: 15px;"><em>This project was created during a playdate with Bob (IBM's AI assistant) at the airport - showcasing the power of AI-assisted development!</em></p>
+                <p>This is a classic snake game implementation created with Python and Pygame. Control the snake to eat food, grow longer, and avoid hitting the walls or yourself! The game features two distinct modes, configurable food items, pause functionality, a high score system, and colorful graphics.</p>
+                <p style="margin-top: 15px;"><em>This project was created during a playdate with Bob (IBM's AI assistant) at the airport - showcasing the power of AI-assisted development! Recently enhanced with improved code quality, type hints, and user-configurable settings.</em></p>
             </div>
 
             <div class="section">
@@ -338,6 +338,7 @@
                             <li>Classic Mode: Traditional gameplay</li>
                             <li>Fun Mode: Walls wrap around</li>
                             <li>Interactive menu selection</li>
+                            <li>Configurable settings</li>
                         </ul>
                     </div>
                     <div class="feature-card">
@@ -346,20 +347,23 @@
                             <li>Separate scores per mode</li>
                             <li>Persistent across sessions</li>
                             <li>Real-time display</li>
+                            <li>Shown in menu</li>
                         </ul>
                     </div>
                     <div class="feature-card">
                         <h3>🎨 Visual Features</h3>
                         <ul>
-                            <li>4 colorful food items</li>
+                            <li>Configurable food items (1-50)</li>
+                            <li>4 colorful food colors</li>
                             <li>Smooth animations</li>
-                            <li>Clean graphics</li>
+                            <li>Pause functionality</li>
                         </ul>
                     </div>
                     <div class="feature-card">
                         <h3>🧪 Quality Assurance</h3>
                         <ul>
                             <li>100+ unit tests</li>
+                            <li>Type hints throughout</li>
                             <li>CI/CD with GitHub Actions</li>
                             <li>Comprehensive coverage</li>
                         </ul>
@@ -421,17 +425,30 @@
                             <div>Restart Game</div>
                         </div>
                         <div class="control-item">
+                            <div class="control-key">P</div>
+                            <div>Pause/Resume</div>
+                        </div>
+                        <div class="control-item">
                             <div class="control-key">ESC</div>
-                            <div>Return to Menu</div>
+                            <div>Quit (press twice)</div>
                         </div>
                     </div>
+                </div>
+                <div style="margin-top: 30px;">
+                    <h3>Menu Controls</h3>
+                    <ul style="margin-top: 15px; padding-left: 20px;">
+                        <li><strong>UP/DOWN arrows:</strong> Select game mode</li>
+                        <li><strong>LEFT/RIGHT arrows:</strong> Adjust number of food items (1-50)</li>
+                        <li><strong>ENTER or SPACE:</strong> Start game with selected settings</li>
+                    </ul>
                 </div>
                 <div style="margin-top: 30px;">
                     <h3>Gameplay Tips</h3>
                     <ul style="margin-top: 15px; padding-left: 20px;">
                         <li>Eat the colorful food items (red, orange, yellow, blue) to grow and score points</li>
                         <li>Each food item adds 1 point to your score</li>
-                        <li>4 food items are always on the board</li>
+                        <li>Configure 1-50 food items in the menu (default: 4)</li>
+                        <li>Press 'P' to pause the game at any time</li>
                         <li>Avoid hitting your own body in both modes</li>
                         <li>In Classic mode, avoid the walls</li>
                         <li>In Fun mode, use wall wrapping to your advantage</li>
@@ -451,11 +468,11 @@
                         <div class="stat-label">Game Modes</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number">4</div>
-                        <div class="stat-label">Food Colors</div>
+                        <div class="stat-number">1-50</div>
+                        <div class="stat-label">Food Items Range</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number">7</div>
+                        <div class="stat-number">4</div>
                         <div class="stat-label">Python Versions</div>
                     </div>
                 </div>
@@ -502,7 +519,7 @@
                         <code>pytest test_snake_game.py -v --cov=snake_game --cov-report=term-missing</code>
                     </div>
                 </div>
-                <p style="margin-top: 20px;">Tests run automatically on every commit for Python versions 3.8 through 3.14. View test results in the <a href="https://github.com/anbie/snake-game/actions" style="color: #667eea; font-weight: bold;">Actions tab</a>.</p>
+                <p style="margin-top: 20px;">Tests run automatically on every commit for Python versions 3.11 through 3.14. View test results in the <a href="https://github.com/anbie/snake-game/actions" style="color: #667eea; font-weight: bold;">Actions tab</a>.</p>
             </div>
 
             <div class="section">

@@ -5,7 +5,7 @@ This is the outcome from my first playdate with my new friend Bob (https://www.i
 
 A classic snake game implementation in Python using Pygame. Control the snake to eat food, grow longer, and avoid hitting the walls or yourself!
 
-![Python](https://img.shields.io/badge/python-3.7+-blue.svg)
+![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![Pygame](https://img.shields.io/badge/pygame-2.0+-green.svg)
 ![Tests](https://github.com/anbie/snake-game/workflows/Run%20Tests/badge.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -15,25 +15,28 @@ A classic snake game implementation in Python using Pygame. Control the snake to
 - **Two Game Modes:**
   - 🏛️ **Classic Mode**: Game ends when snake hits walls
   - 🎪 **Fun Mode**: Snake wraps around walls (appears on opposite side)
-- Interactive startup menu to select game mode
-- **4 colorful food items** always on screen (Red, Orange, Yellow, Blue)
+- **Interactive startup menu** to select game mode and configure settings
+- **Configurable food items** (1-50 items, default 4) with colorful variety (Red, Orange, Yellow, Blue)
+- **Pause functionality** - Press 'P' to pause/resume the game
 - **High Score System:**
   - 🏆 Separate high scores for each game mode
   - 💾 Automatically saved and persisted across sessions
-  - 📊 Displayed during gameplay
+  - 📊 Displayed during gameplay and in menu
 - Smooth controls using arrow keys
 - Score tracking with real-time display
 - Game over detection with restart option
 - Return to menu option after game over
-- Clean and simple graphics
+- Clean and simple graphics with improved UI
 - Comprehensive unit tests with CI/CD integration
+- Type hints for better code quality
 
 ## 🎯 How to Play
 
 ### Starting the Game
-1. Run the game and you'll see a menu with two options
-2. Use **UP/DOWN** arrow keys to select a mode
-3. Press **ENTER** or **SPACE** to start
+1. Run the game and you'll see a menu with game mode options
+2. Use **UP/DOWN** arrow keys to select a mode (Classic or Fun)
+3. Use **LEFT/RIGHT** arrow keys to adjust the number of food items (1-50)
+4. Press **ENTER** or **SPACE** to start the game
 
 ### Game Modes
 
@@ -54,10 +57,11 @@ A classic snake game implementation in Python using Pygame. Control the snake to
   - ⬇️ **DOWN** - Move down
   - ⬅️ **LEFT** - Move left
   - ➡️ **RIGHT** - Move right
-- Eat the colorful food items (red, orange, yellow) to grow longer and increase your score
+- Press **P** to pause/resume the game
+- Eat the colorful food items (red, orange, yellow, blue) to grow longer and increase your score
 - Avoid hitting your own body (in both modes)
 - Press **SPACE** to restart after game over
-- Press **ESC** to return to menu after game over
+- Press **ESC** to return to menu after game over or during gameplay (press twice to confirm quit)
 
 ## 🚀 Installation
 
@@ -107,9 +111,15 @@ You can modify the following constants in `snake_game.py` to customize the game:
 - `WINDOW_HEIGHT`: Height of the game window (default: 480)
 - `BLOCK_SIZE`: Size of each snake segment (default: 20)
 - `SPEED`: Game speed/FPS (default: 10)
-- `NUM_FOOD_ITEMS`: Number of food items on the board (default: 4)
+- `DEFAULT_NUM_FOOD_ITEMS`: Default number of food items (default: 4)
+- `MIN_FOOD_ITEMS`: Minimum food items allowed (default: 1)
+- `MAX_FOOD_ITEMS`: Maximum food items allowed (default: 50)
 - Colors: `WHITE`, `BLACK`, `RED`, `GREEN`, `BLUE`, `ORANGE`, `YELLOW`
-- `FOOD_COLORS`: Array of colors for food items (colors can repeat)
+- `FOOD_COLORS`: Array of colors for food items
+- `SNAKE_INNER_OFFSET`: Offset for snake inner detail (default: 4)
+- `SNAKE_INNER_SIZE`: Size of snake inner detail (default: 12)
+
+**Note:** Food items can now be configured at runtime through the menu (1-50 items).
 
 ## 🏗️ Project Structure
 
@@ -129,11 +139,12 @@ snake-game/
 
 ### Common to Both Modes
 - The snake starts with 3 segments
-- **4 food items** are always present on the board with different colors (Red, Orange, Yellow, Blue)
+- **Configurable food items** (1-50, default 4) are present on the board with different colors (Red, Orange, Yellow, Blue)
 - Each food eaten adds 1 point to the score and 1 segment to the snake
-- When a food is eaten, a new one spawns to maintain 4 food items
-- Food spawns randomly on the grid, avoiding the snake's body
+- When a food is eaten, a new one spawns to maintain the configured number of food items
+- Food spawns randomly on the grid, avoiding the snake's body and other food
 - Hitting your own body ends the game in both modes
+- Press 'P' to pause/resume at any time
 
 ### Classic Mode Specific
 - Game ends when snake hits any wall
@@ -198,9 +209,10 @@ The test suite includes:
 ### Continuous Integration
 
 Tests run automatically on every commit via GitHub Actions:
-- Tests run on Python 3.8, 3.9, 3.10, 3.11, 3.12, 3.13, and 3.14
+- Tests run on Python 3.11, 3.12, 3.13, and 3.14
 - Automatic code coverage reporting
 - Tests run on both push and pull requests
+- Coverage reports uploaded as artifacts
 
 View test results in the [Actions tab](https://github.com/anbie/snake-game/actions) of the repository.
 

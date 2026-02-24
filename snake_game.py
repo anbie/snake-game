@@ -47,7 +47,7 @@ BLOCK_SIZE = 20
 SPEED = 10
 DEFAULT_NUM_FOOD_ITEMS = 4  # Default number of food items on the board
 MIN_FOOD_ITEMS = 1
-MAX_FOOD_ITEMS = 50
+MAX_FOOD_ITEMS = 99
 HIGHSCORE_FILE = os.environ.get('SNAKE_HIGHSCORE_FILE', 'highscores.json')
 
 # Visual constants
@@ -71,7 +71,7 @@ GRAY = (128, 128, 128)
 LIGHT_GRAY = (200, 200, 200)
 
 # Food colors for variety
-FOOD_COLORS = [RED, ORANGE, YELLOW, BLUE]
+FOOD_COLORS = [RED, ORANGE, YELLOW, BLUE, GREEN, WHITE]
 
 
 class Direction(Enum):

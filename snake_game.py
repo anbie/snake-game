@@ -245,6 +245,21 @@ class SnakeGame:
     def get_highscore(self) -> int:
         """Get high score for current game mode."""
         return self.highscores[self._get_mode_key()]
+    
+    def _is_collision(self, pt: Optional[Point] = None) -> bool:
+        """Check if there is a collision at the given point."""
+        if pt is None:
+            pt = self.head
+        
+        # Check wall collision based on game mode
+        if self.mode == GameMode.CLASSIC:
+            if pt.x > WINDOW_WIDTH - BLOCK_SIZE or pt.x < 0 or pt.y > WINDOW_HEIGHT - BLOCK_SIZE or pt.y < 0:
+                return True
+        
+        # Check self-collision
+        if pt in self.snake[1:]:
+            return True
+        return False
         
     def _update_ui(self) -> None:
         """Update game display with snake, food, score, and UI elements."""

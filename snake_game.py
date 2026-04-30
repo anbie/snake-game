@@ -8,6 +8,7 @@ import logging
 from enum import Enum
 from collections import namedtuple
 from typing import List, Tuple, Optional
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING)
@@ -24,7 +25,60 @@ SPEED = 10
 DEFAULT_NUM_FOOD_ITEMS = 4  # Default number of food items on the board
 MIN_FOOD_ITEMS = 1
 MAX_FOOD_ITEMS = 99
-HIGHSCORE_FILE = os.environ.get('SNAKE_HIGHSCORE_FILE', 'highscores.json')
+
+
+def get_safe_highscore_path() -> str:
+    """
+    Get validated highscore file path to prevent path traversal attacks.
+    
+    Security measures:
+    - Resolves to absolute path
+    - Ensures path is within allowed directories (cwd or user home)
+    - Validates .json extension
+    - Falls back to safe default if validation fails
+    
+    Returns:
+        str: Safe, validated path to highscore file
+    """
+    default_file = 'highscores.json'
+    env_file = os.environ.get('SNAKE_HIGHSCORE_FILE', default_file)
+    
+    try:
+        # Resolve to absolute path
+        file_path = Path(env_file).resolve()
+        
+        # Ensure it's within allowed directories (current working directory or user home)
+        allowed_dirs = [Path.cwd(), Path.home()]
+        
+        # Check if path starts with any allowed directory
+        is_allowed = any(
+            str(file_path).startswith(str(allowed_dir)) 
+            for allowed_dir in allowed_dirs
+        )
+        
+        if not is_allowed:
+            logger.warning(
+                f"Highscore path outside allowed directories: {file_path}. "
+                f"Using default: {default_file}"
+            )
+            return str(Path.cwd() / default_file)
+        
+        # Ensure filename ends with .json
+        if file_path.suffix != '.json':
+            logger.warning(
+                f"Highscore file must have .json extension: {file_path}. "
+                f"Using default: {default_file}"
+            )
+            return str(Path.cwd() / default_file)
+        
+        return str(file_path)
+        
+    except (ValueError, OSError) as e:
+        logger.warning(f"Invalid highscore path: {e}. Using default: {default_file}")
+        return str(Path.cwd() / default_file)
+
+
+HIGHSCORE_FILE = get_safe_highscore_path()
 
 # Visual constants
 SNAKE_INNER_OFFSET = 4
@@ -68,14 +122,51 @@ Point = namedtuple('Point', 'x, y')  # 2D point with x, y coordinates
 
 
 def load_highscores() -> dict:
-    """Load high scores from JSON file, returns default {'classic': 0, 'fun': 0} if not found."""
-    if os.path.exists(HIGHSCORE_FILE):
-        try:
-            with open(HIGHSCORE_FILE, 'r') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError) as e:
-            logger.warning(f"Failed to load highscores: {e}")
-    return {'classic': 0, 'fun': 0}
+    """
+    Load high scores from JSON file with validation.
+    
+    Security measures:
+    - Validates JSON structure (must be dict)
+    - Validates data types (must be integers)
+    - Clamps values to reasonable range (0-999999)
+    - Returns safe defaults on any error
+    
+    Returns:
+        dict: Validated highscores with keys 'classic' and 'fun'
+    """
+    default_scores = {'classic': 0, 'fun': 0}
+    
+    if not os.path.exists(HIGHSCORE_FILE):
+        return default_scores
+    
+    try:
+        with open(HIGHSCORE_FILE, 'r') as f:
+            data = json.load(f)
+        
+        # Validate structure - must be a dictionary
+        if not isinstance(data, dict):
+            logger.warning(f"Invalid highscore format: expected dict, got {type(data).__name__}")
+            return default_scores
+        
+        # Validate and sanitize each mode
+        validated = {}
+        for mode in ['classic', 'fun']:
+            score = data.get(mode, 0)
+            
+            # Ensure it's a numeric type
+            if not isinstance(score, (int, float)):
+                logger.warning(f"Invalid score type for {mode}: {type(score).__name__}, using 0")
+                validated[mode] = 0
+            else:
+                # Convert to int and clamp to reasonable range
+                validated[mode] = max(0, min(int(score), 999999))
+        
+        return validated
+        
+    except (json.JSONDecodeError, IOError) as e:
+        logger.warning(f"Failed to load highscores: {type(e).__name__}")
+        logger.debug(f"Detailed error: {e}")
+        return default_scores
 
 
 def save_highscores(highscores: dict) -> None:

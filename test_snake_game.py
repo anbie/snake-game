@@ -970,6 +970,245 @@ class TestHighScore(unittest.TestCase):
         self.assertNotEqual(classic_high, fun_high)
 
 
+class TestSecurityFixes(unittest.TestCase):
+    """Test suite for security vulnerability fixes"""
+    
+    def setUp(self):
+        """Set up test fixtures"""
+        pygame.init()
+        # Clean up any existing test highscore file
+        if os.path.exists('test_highscores.json'):
+            os.remove('test_highscores.json')
+    
+    def tearDown(self):
+        """Clean up after tests"""
+        pygame.quit()
+        if os.path.exists('test_highscores.json'):
+            os.remove('test_highscores.json')
+    
+    def test_path_traversal_protection_absolute_path(self):
+        """Test that absolute paths outside allowed directories are rejected"""
+        from snake_game import get_safe_highscore_path
+        from pathlib import Path
+        
+        # Try to set path to /etc/passwd
+        os.environ['SNAKE_HIGHSCORE_FILE'] = '/etc/passwd'
+        safe_path = get_safe_highscore_path()
+        
+        # Should fallback to default in current directory
+        self.assertTrue(safe_path.endswith('highscores.json'))
+        self.assertIn(str(Path.cwd()), safe_path)
+        self.assertNotIn('/etc/', safe_path)
+    
+    def test_path_traversal_protection_relative_path(self):
+        """Test that relative path traversal attempts are blocked"""
+        from snake_game import get_safe_highscore_path
+        from pathlib import Path
+        
+        # Try path traversal
+        os.environ['SNAKE_HIGHSCORE_FILE'] = '../../../etc/passwd'
+        safe_path = get_safe_highscore_path()
+        
+        # Should fallback to default
+        self.assertTrue(safe_path.endswith('highscores.json'))
+        self.assertIn(str(Path.cwd()), safe_path)
+    
+    def test_path_validation_non_json_extension(self):
+        """Test that non-JSON extensions are rejected"""
+        from snake_game import get_safe_highscore_path
+        from pathlib import Path
+        
+        # Try non-JSON extension
+        os.environ['SNAKE_HIGHSCORE_FILE'] = 'malicious.txt'
+        safe_path = get_safe_highscore_path()
+        
+        # Should fallback to default
+        self.assertTrue(safe_path.endswith('.json'))
+        self.assertEqual(safe_path, str(Path.cwd() / 'highscores.json'))
+    
+    def test_path_validation_valid_cwd_path(self):
+        """Test that valid paths in current directory are accepted"""
+        from snake_game import get_safe_highscore_path
+        
+        # Valid path in CWD
+        os.environ['SNAKE_HIGHSCORE_FILE'] = 'my_scores.json'
+        safe_path = get_safe_highscore_path()
+        
+        # Should be accepted
+        self.assertTrue(safe_path.endswith('my_scores.json'))
+        self.assertTrue(safe_path.endswith('.json'))
+    
+    def test_json_validation_invalid_structure(self):
+        """Test that non-dict JSON is rejected"""
+        from snake_game import load_highscores
+        import json
+        
+        # Create test file in current directory (allowed)
+        test_file = 'test_invalid_structure.json'
+        with open(test_file, 'w') as f:
+            json.dump(["not", "a", "dict"], f)
+        
+        try:
+            # Test load_highscores directly with the file
+            scores = load_highscores()  # Will use HIGHSCORE_FILE from env
+            
+            # Temporarily override and test
+            os.environ['SNAKE_HIGHSCORE_FILE'] = test_file
+            import importlib
+            import snake_game
+            importlib.reload(snake_game)
+            
+            scores = snake_game.load_highscores()
+            
+            # Should return default scores
+            self.assertEqual(scores, {'classic': 0, 'fun': 0})
+        finally:
+            if os.path.exists(test_file):
+                os.remove(test_file)
+    
+    def test_json_validation_invalid_types(self):
+        """Test that non-numeric scores are sanitized"""
+        from snake_game import load_highscores
+        import json
+        
+        test_file = 'test_invalid_types.json'
+        with open(test_file, 'w') as f:
+            json.dump({'classic': 'not_a_number', 'fun': 50}, f)
+        
+        try:
+            os.environ['SNAKE_HIGHSCORE_FILE'] = test_file
+            import importlib
+            import snake_game
+            importlib.reload(snake_game)
+            
+            scores = snake_game.load_highscores()
+            
+            # String should be converted to 0
+            self.assertEqual(scores['classic'], 0)
+            self.assertEqual(scores['fun'], 50)
+        finally:
+            if os.path.exists(test_file):
+                os.remove(test_file)
+    
+    def test_json_validation_integer_overflow(self):
+        """Test that extremely large numbers are clamped"""
+        from snake_game import load_highscores
+        import json
+        
+        test_file = 'test_overflow.json'
+        with open(test_file, 'w') as f:
+            json.dump({'classic': 999999999999999999, 'fun': 50}, f)
+        
+        try:
+            os.environ['SNAKE_HIGHSCORE_FILE'] = test_file
+            import importlib
+            import snake_game
+            importlib.reload(snake_game)
+            
+            scores = snake_game.load_highscores()
+            
+            # Should be clamped to max value
+            self.assertEqual(scores['classic'], 999999)
+            self.assertEqual(scores['fun'], 50)
+        finally:
+            if os.path.exists(test_file):
+                os.remove(test_file)
+    
+    def test_json_validation_negative_numbers(self):
+        """Test that negative numbers are clamped to 0"""
+        from snake_game import load_highscores
+        import json
+        
+        test_file = 'test_negative.json'
+        with open(test_file, 'w') as f:
+            json.dump({'classic': -100, 'fun': 50}, f)
+        
+        try:
+            os.environ['SNAKE_HIGHSCORE_FILE'] = test_file
+            import importlib
+            import snake_game
+            importlib.reload(snake_game)
+            
+            scores = snake_game.load_highscores()
+            
+            # Negative should be clamped to 0
+            self.assertEqual(scores['classic'], 0)
+            self.assertEqual(scores['fun'], 50)
+        finally:
+            if os.path.exists(test_file):
+                os.remove(test_file)
+    
+    def test_json_validation_extra_keys(self):
+        """Test that extra keys in JSON are ignored"""
+        from snake_game import load_highscores
+        import json
+        
+        test_file = 'test_extra_keys.json'
+        with open(test_file, 'w') as f:
+            json.dump({'classic': 50, 'fun': 30, 'malicious': 'data'}, f)
+        
+        try:
+            os.environ['SNAKE_HIGHSCORE_FILE'] = test_file
+            import importlib
+            import snake_game
+            importlib.reload(snake_game)
+            
+            scores = snake_game.load_highscores()
+            
+            # Should only have classic and fun keys
+            self.assertEqual(set(scores.keys()), {'classic', 'fun'})
+            self.assertEqual(scores['classic'], 50)
+            self.assertEqual(scores['fun'], 30)
+        finally:
+            if os.path.exists(test_file):
+                os.remove(test_file)
+    
+    def test_argparse_validation_food_count_valid(self):
+        """Test that valid food counts are accepted"""
+        from snake_vs_mode import validate_food_count
+        
+        # Valid values
+        self.assertEqual(validate_food_count("1"), 1)
+        self.assertEqual(validate_food_count("50"), 50)
+        self.assertEqual(validate_food_count("99"), 99)
+    
+    def test_argparse_validation_food_count_invalid(self):
+        """Test that invalid food counts are rejected"""
+        from snake_vs_mode import validate_food_count
+        import argparse
+        
+        # Below minimum
+        with self.assertRaises(argparse.ArgumentTypeError):
+            validate_food_count("0")
+        
+        # Above maximum
+        with self.assertRaises(argparse.ArgumentTypeError):
+            validate_food_count("100")
+        
+        # Negative
+        with self.assertRaises(argparse.ArgumentTypeError):
+            validate_food_count("-5")
+    
+    def test_argparse_validation_positive_int_valid(self):
+        """Test that valid positive integers are accepted"""
+        from snake_vs_mode import validate_positive_int
+        
+        self.assertEqual(validate_positive_int("0"), 0)
+        self.assertEqual(validate_positive_int("50"), 50)
+        self.assertEqual(validate_positive_int("1000"), 1000)
+    
+    def test_argparse_validation_positive_int_invalid(self):
+        """Test that negative integers are rejected"""
+        from snake_vs_mode import validate_positive_int
+        import argparse
+        
+        with self.assertRaises(argparse.ArgumentTypeError):
+            validate_positive_int("-1")
+        
+        with self.assertRaises(argparse.ArgumentTypeError):
+            validate_positive_int("-100")
+
+
 if __name__ == '__main__':
     # Run tests with verbose output
     unittest.main(verbosity=2)

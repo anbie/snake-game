@@ -34,13 +34,21 @@ jobs:
         pip install -r requirements.txt
         pip install pytest pytest-cov
     
-    - name: Run tests with pytest
+    - name: Run all tests with pytest
       run: |
         xvfb-run -a python -m pytest test_snake_game.py -v --cov=snake_game --cov-report=term-missing
+    
+    - name: Run security tests specifically
+      run: |
+        xvfb-run -a python -m pytest test_snake_game.py::TestSecurityFixes -v
     
     - name: Run tests with unittest
       run: |
         xvfb-run -a python -m unittest test_snake_game.py -v
+    
+    - name: Verify security fixes with standalone tests
+      run: |
+        python test_security_standalone.py
     
     - name: Generate coverage report
       if: matrix.python-version == '3.14'

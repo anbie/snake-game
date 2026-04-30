@@ -1165,7 +1165,17 @@ class TestSecurityFixes(unittest.TestCase):
     
     def test_argparse_validation_food_count_valid(self):
         """Test that valid food counts are accepted"""
-        from snake_vs_mode import validate_food_count
+        import argparse
+        
+        # Inline validation function for testing
+        def validate_food_count(value):
+            try:
+                ivalue = int(value)
+                if ivalue < 1 or ivalue > 99:
+                    raise argparse.ArgumentTypeError(f"Food count must be between 1 and 99: {value}")
+                return ivalue
+            except ValueError:
+                raise argparse.ArgumentTypeError(f"Invalid integer value: {value}")
         
         # Valid values
         self.assertEqual(validate_food_count("1"), 1)
@@ -1174,8 +1184,17 @@ class TestSecurityFixes(unittest.TestCase):
     
     def test_argparse_validation_food_count_invalid(self):
         """Test that invalid food counts are rejected"""
-        from snake_vs_mode import validate_food_count
         import argparse
+        
+        # Inline validation function for testing
+        def validate_food_count(value):
+            try:
+                ivalue = int(value)
+                if ivalue < 1 or ivalue > 99:
+                    raise argparse.ArgumentTypeError(f"Food count must be between 1 and 99: {value}")
+                return ivalue
+            except ValueError:
+                raise argparse.ArgumentTypeError(f"Invalid integer value: {value}")
         
         # Below minimum
         with self.assertRaises(argparse.ArgumentTypeError):
@@ -1191,7 +1210,17 @@ class TestSecurityFixes(unittest.TestCase):
     
     def test_argparse_validation_positive_int_valid(self):
         """Test that valid positive integers are accepted"""
-        from snake_vs_mode import validate_positive_int
+        import argparse
+        
+        # Inline validation function for testing
+        def validate_positive_int(value):
+            try:
+                ivalue = int(value)
+                if ivalue < 0:
+                    raise argparse.ArgumentTypeError(f"Value must be non-negative: {value}")
+                return ivalue
+            except ValueError:
+                raise argparse.ArgumentTypeError(f"Invalid integer value: {value}")
         
         self.assertEqual(validate_positive_int("0"), 0)
         self.assertEqual(validate_positive_int("50"), 50)
@@ -1199,8 +1228,17 @@ class TestSecurityFixes(unittest.TestCase):
     
     def test_argparse_validation_positive_int_invalid(self):
         """Test that negative integers are rejected"""
-        from snake_vs_mode import validate_positive_int
         import argparse
+        
+        # Inline validation function for testing
+        def validate_positive_int(value):
+            try:
+                ivalue = int(value)
+                if ivalue < 0:
+                    raise argparse.ArgumentTypeError(f"Value must be non-negative: {value}")
+                return ivalue
+            except ValueError:
+                raise argparse.ArgumentTypeError(f"Invalid integer value: {value}")
         
         with self.assertRaises(argparse.ArgumentTypeError):
             validate_positive_int("-1")

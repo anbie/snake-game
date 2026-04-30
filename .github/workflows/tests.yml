@@ -42,10 +42,6 @@ jobs:
       run: |
         xvfb-run -a python -m pytest test_snake_game.py::TestSecurityFixes -v
     
-    - name: Run tests with unittest
-      run: |
-        xvfb-run -a python -m unittest test_snake_game.py -v
-    
     - name: Verify security fixes with standalone tests
       run: |
         python test_security_standalone.py

@@ -1,4 +1,4 @@
-"""Snake Game with Classic and wall-wrapping Fun modes, built with Pygame."""
+"""Snake Game with Classic and wall-wrapping Fun modes, built with Pygame. AB"""
 
 import pygame
 import random
